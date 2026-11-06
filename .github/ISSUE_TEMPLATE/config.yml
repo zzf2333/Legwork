@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 安全问题
+    url: https://github.com/zzf2333/Legwork/security/advisories/new
+    about: 可能导致误发消息或数据外泄的问题，请走私密通道，不要开公开 issue

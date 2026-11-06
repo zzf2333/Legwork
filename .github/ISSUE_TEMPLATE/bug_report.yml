@@ -1,0 +1,58 @@
+name: Bug 报告
+description: 某个行为与文档或预期不符
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        提交前请确认：**不要在 issue 里贴简历、聊天记录、招聘者姓名、账号 ID、会话 ID 或消息 MID**。
+        需要还原问题时用 `demo-001` 这类虚构值。
+  - type: dropdown
+    id: channel
+    attributes:
+      label: 通道
+      description: 离线通道和真实通道的行为不同，混着说会带偏排查方向
+      options:
+        - "--fixtures 离线通道（含 tests/fake_host.py）"
+        - "真实通道（live=true，操作真实浏览器）"
+        - "两者都有"
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: 发生了什么
+      description: 实际结果，以及你预期它应该是什么
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: 复现步骤
+      description: 贴命令（把路径和 ID 替换成虚构值），以及用到的配置字段
+      placeholder: |
+        legwork --data-dir /tmp/lw prepare --config /tmp/lw.json --fixtures examples/fixtures
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: 输出与退出码
+      description: `legwork status` 的输出（不含 JD 与聊天内容）、stderr 里的 JSON 错误、退出码
+      render: text
+  - type: input
+    id: env
+    attributes:
+      label: 环境
+      placeholder: macOS 15.2 / Python 3.12.4 / ego-browser 0.6.2.7 / Codex CLI x.y.z
+    validations:
+      required: true
+  - type: checkboxes
+    id: confirm
+    attributes:
+      label: 确认
+      options:
+        - label: 已删除真实简历、聊天、账号标识与平台内部 ID
+          required: true
+        - label: 已读 README 的「安全与边界」和「已知限制」
+          required: true

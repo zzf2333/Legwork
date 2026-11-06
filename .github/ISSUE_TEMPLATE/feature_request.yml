@@ -1,0 +1,35 @@
+name: 功能建议
+description: 希望新增能力或改变现有行为
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        这个项目对「自动化」有明确边界：**任何会让用户不知情多发一条消息的改动，都需要先谈清楚**。
+  - type: textarea
+    id: problem
+    attributes:
+      label: 你想解决什么问题
+      description: 描述场景，不要先给方案
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: 你设想的做法
+      description: 如果不确定也可以留空
+  - type: dropdown
+    id: risk
+    attributes:
+      label: 这个改动会不会影响发送行为
+      options:
+        - "不影响：只读、展示、文档或测试"
+        - "可能影响：发送时机、额度、去重、重试"
+        - "明确要改发送语义（需要先设计）"
+    validations:
+      required: true
+  - type: textarea
+    id: alternative
+    attributes:
+      label: 你现在的替代做法
+      description: 目前你是怎么绕过这个问题的

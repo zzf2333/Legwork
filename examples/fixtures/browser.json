@@ -1,0 +1,17 @@
+{
+  "platform_user_id": "100000001",
+  "history_complete": true,
+  "contacts": [],
+  "jobs": {
+    "demo-001": {
+      "default_message": "您好，我对这个职位很感兴趣，方便沟通吗？",
+      "reply": false,
+      "fail_at": null
+    },
+    "demo-002": {
+      "default_message": "您好，我对这个职位很感兴趣，方便沟通吗？",
+      "reply": false,
+      "fail_at": null
+    }
+  }
+}

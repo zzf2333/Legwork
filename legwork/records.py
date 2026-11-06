@@ -1,0 +1,74 @@
+"""岗位快照、保存链接与身份键的共享定义。"""
+from __future__ import annotations
+
+import hashlib
+import json
+import re
+from pathlib import Path
+
+from .errors import PolicyError
+
+JOB_FIELDS = (
+    "job_id",
+    "company",
+    "boss_id",
+    "boss_name",
+    "title",
+    "salary",
+    "address",
+    "description",
+)
+
+# 稳定岗位 ID 只允许平台加密 ID 字符集；带 / ? # 等字符的值拼不出可信链接。
+JOB_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_-]{3,127}$")
+JOB_URL = "https://www.zhipin.com/job_detail/{job_id}.html"
+
+
+def normalize_text(value) -> str:
+    """只统一空白：详情页与列表页的缩进、换行差异不算 JD 变化，真实内容一律保留。"""
+    return " ".join(str(value or "").split())
+
+
+def snapshot_digest(job: dict) -> str:
+    """岗位快照摘要：绑定 JD 正文内容，发送前必须与页面一致。
+
+    job_url 与 source_keyword 是定位和来源信息，不参与正文摘要。
+    """
+    canonical = json.dumps(
+        {field: normalize_text(job.get(field, "")) for field in JOB_FIELDS},
+        ensure_ascii=False,
+        sort_keys=True,
+        separators=(",", ":"),
+    )
+    return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+
+
+def job_url(job_id: str) -> str:
+    """保存的岗位详情地址；只接受稳定 ID，外部传入的任意 URL 在这里被拒绝。"""
+    value = str(job_id or "")
+    if not JOB_ID.match(value):
+        raise PolicyError(
+            "invalid_job_id", f"岗位 ID 不是稳定标识，不能生成保存链接：{value!r}"
+        )
+    return JOB_URL.format(job_id=value)
+
+
+def identity_keys(config, item: dict) -> set[tuple[str, str]]:
+    values = {
+        "job": str(item.get("job_id", "")),
+        "boss": str(item.get("boss_id", "")),
+        "company": str(item.get("company", "")),
+    }
+    return {(scope, values[scope]) for scope in config.dedupe_scope}
+
+
+def read_json(path, label: str) -> dict:
+    try:
+        payload = json.loads(Path(path).read_text(encoding="utf-8"))
+    except OSError as exc:
+        raise PolicyError("invalid_input", f"无法读取{label}：{path}（{exc}）") from exc
+    except json.JSONDecodeError as exc:
+        raise PolicyError("invalid_input", f"{label}不是合法 JSON：{path}（{exc}）") from exc
+    if not isinstance(payload, dict):
+        raise PolicyError("invalid_input", f"{label}必须是 JSON 对象")
+    return payload

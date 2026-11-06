@@ -1,0 +1,37 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: 安装
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install ruff==0.16.6
+          python -m pip install -e .
+      - name: lint
+        run: ruff check legwork tests
+      - name: 测试
+        run: python -m unittest discover -s tests -v
+      - name: JS 语法
+        run: |
+          for f in legwork/resources/js/*.js; do node --check "$f"; done
+      - name: JS 契约
+        run: |
+          node tests/js/guard_contract.mjs
+          node tests/js/locate_contract.mjs

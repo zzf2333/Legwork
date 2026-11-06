@@ -1,0 +1,43 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "legwork-cli"
+version = "0.0.1"
+description = "We do the legwork. You make the call. 本机运行的求职执行工具：采集、筛选、投递、回执由程序做，判断与正文由你自己的 agent 做"
+keywords = ["job-search", "job-application", "browser-automation", "agent", "cli"]
+license = { text = "MIT" }
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = []
+classifiers = [
+  "Environment :: Console",
+  "Intended Audience :: End Users/Desktop",
+  "Topic :: Utilities",
+  "Programming Language :: Python :: 3",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: POSIX :: Linux",
+  "Operating System :: MacOS",
+]
+
+[project.urls]
+Homepage = "https://github.com/zzf2333/Legwork"
+Issues = "https://github.com/zzf2333/Legwork/issues"
+Changelog = "https://github.com/zzf2333/Legwork/blob/main/CHANGELOG.md"
+
+[project.optional-dependencies]
+dev = ["ruff==0.16.6"]
+
+[project.scripts]
+legwork = "legwork.cli:main"
+
+[tool.setuptools]
+packages = ["legwork"]
+
+[tool.setuptools.package-data]
+legwork = [
+  "resources/schema/*.json",
+  "resources/js/*.js",
+  "resources/skills/*/SKILL.md",
+]

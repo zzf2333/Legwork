@@ -1,0 +1,57 @@
+[
+  {
+    "job_id": "demo-001",
+    "company": "示例一号科技",
+    "boss_name": "示例招聘者甲",
+    "boss_id": "boss-01",
+    "title": "Python 后端工程师",
+    "salary": "18-25K",
+    "address": "示例城市·高新区",
+    "description": "示例 JD：负责订单服务开发，要求五年以上 Python 经验，常驻示例城市办公室，双休。",
+    "can_add_friend": true
+  },
+  {
+    "job_id": "demo-002",
+    "company": "示例二号科技",
+    "boss_name": "示例招聘者乙",
+    "boss_id": "boss-02",
+    "title": "平台工程师",
+    "salary": "20-28K",
+    "address": "示例城市·天府新区",
+    "description": "示例 JD：负责内部平台建设，需要现场办公，技术栈 Python 与 SQLite。",
+    "can_add_friend": true
+  },
+  {
+    "job_id": "demo-003",
+    "company": "示例三号科技",
+    "boss_name": "示例招聘者丙",
+    "boss_id": "boss-03",
+    "title": "Python 开发实习生",
+    "salary": "150-200元/天",
+    "address": "示例城市·青羊区",
+    "description": "示例 JD：实习岗位，配合导师完成脚本开发。",
+    "can_add_friend": true
+  },
+  {
+    "job_id": "demo-004",
+    "company": "示例一号科技",
+    "boss_name": "示例招聘者丁",
+    "boss_id": "boss-04",
+    "title": "数据平台工程师",
+    "salary": "18-24K",
+    "address": "示例城市·高新区",
+    "description": "示例 JD：同公司另一岗位，负责数据平台开发。",
+    "can_add_friend": true
+  },
+  {
+    "job_id": "demo-005",
+    "company": "示例五号科技",
+    "boss_name": "示例招聘者戊",
+    "boss_id": "boss-05",
+    "title": "Python 后端工程师",
+    "salary": "18-25K",
+    "address": "另一城市·示例区",
+    "description": "示例 JD：工作地点在另一城市，需要现场办公。",
+    "can_add_friend": true
+  }
+]

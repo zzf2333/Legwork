@@ -1,0 +1,41 @@
+{
+  "packet_id": "pkt-示例批次编号",
+  "results": [
+    {
+      "job_id": "demo-001",
+      "action": "send",
+      "reason": "示例理由：技术栈与经历事实一致。",
+      "conditions": [
+        {
+          "id": "hr_office",
+          "status": "met",
+          "evidence": "示例 JD 原文：需要现场办公。"
+        },
+        {
+          "id": "hr_night_shift",
+          "status": "unknown",
+          "evidence": "示例 JD 未说明作息；该条件策略为 allow。"
+        }
+      ],
+      "greeting": "您好，我想应聘 Python 后端工程师。我负责过订单服务开发，也做过一次数据迁移项目，想了解团队目前最急的业务问题。",
+      "resume_fact_ids": ["rf_001", "rf_002"]
+    },
+    {
+      "job_id": "demo-002",
+      "action": "skip",
+      "reason": "示例理由：岗位描述要求的行业经验与现有事实不符。",
+      "conditions": [
+        {
+          "id": "hr_office",
+          "status": "met",
+          "evidence": "示例 JD 原文：需要现场办公。"
+        },
+        {
+          "id": "hr_night_shift",
+          "status": "unknown",
+          "evidence": "示例 JD 未说明作息。"
+        }
+      ]
+    }
+  ]
+}

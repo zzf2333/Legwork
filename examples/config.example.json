@@ -1,0 +1,61 @@
+{
+  "schema_version": 1,
+  "account_id": "acct-demo-0001",
+  "platform_user_id": "100000001",
+  "city_code": "101270100",
+  "city_name": "示例城市",
+  "keywords": ["示例关键词一", "示例关键词二"],
+  "resume_facts": [
+    {
+      "id": "rf_001",
+      "text": "示例事实：五年后端服务开发经验，负责订单服务。"
+    },
+    {
+      "id": "rf_002",
+      "text": "示例事实：负责过一次数据迁移项目。"
+    }
+  ],
+  "hard_requirements": [
+    {
+      "id": "hr_title_intern",
+      "kind": "program",
+      "field": "title",
+      "op": "excludes",
+      "value": "实习",
+      "text": "排除实习岗位"
+    },
+    {
+      "id": "hr_city_onsite",
+      "kind": "program",
+      "field": "address",
+      "op": "contains",
+      "value": "示例城市",
+      "text": "工作地点在示例城市"
+    },
+    {
+      "id": "hr_office",
+      "kind": "semantic",
+      "text": "可以接受现场办公",
+      "unknown_policy": "skip"
+    },
+    {
+      "id": "hr_night_shift",
+      "kind": "semantic",
+      "text": "不需要长期夜班",
+      "unknown_policy": "allow"
+    }
+  ],
+  "preferences": {
+    "notes": "示例偏好：优先平台工程方向。示例配置不构成投递授权。"
+  },
+  "dedupe_scope": ["job", "boss", "company"],
+  "daily_limit": 5,
+  "batch_size": 3,
+  "browser": {
+    "space": "legwork",
+    "job_page": "p2",
+    "chat_page": "p1"
+  },
+  "timezone": "Asia/Shanghai",
+  "live": false
+}

@@ -1,0 +1,15 @@
+# 示例 crontab 条目。工具不会自动安装；确认路径后自行执行 `crontab -e` 粘贴。
+# 说明：
+# - 时间与频率由系统调度器负责，不在 agent 里循环等时间。
+# - 需要 cron 环境能找到 legwork（用绝对路径最稳）。
+# - 工作目录必须是受信任的 git 仓库：codex exec 在仓库外会拒绝运行，工具也不会加跳过检查的参数。
+# - 登录过期、电脑休眠、宿主额度用尽都会让本轮失败；失败时本轮不发送，日志里有 run_id 可续作。
+
+SHELL=/bin/sh
+PATH=/usr/local/bin:/usr/bin:/bin:/opt/homebrew/bin
+
+# 工作日 10:07 跑一轮
+7 10 * * 1-5 cd /Users/you/your-project && /Users/you/.local/bin/legwork --data-dir /Users/you/.legwork run --config /Users/you/legwork.config.json >> /Users/you/.legwork/run.log 2>&1
+
+# 工作日 15:07 再跑一轮（额度由配置的 daily_limit 跨轮累计）
+7 15 * * 1-5 cd /Users/you/your-project && /Users/you/.local/bin/legwork --data-dir /Users/you/.legwork run --config /Users/you/legwork.config.json >> /Users/you/.legwork/run.log 2>&1

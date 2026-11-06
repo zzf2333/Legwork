@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  示例 launchd 配置。工具不会自动安装，也不会替你加载或卸载服务。
+  使用步骤（由用户自己执行）：
+  1. 复制到 ~/Library/LaunchAgents/com.example.legwork.run.plist 并按实际路径修改。
+  2. launchctl bootstrap gui/$UID ~/Library/LaunchAgents/com.example.legwork.run.plist
+  3. 查看日志：tail -f /Users/you/.legwork/launchd.out.log
+  卸载：launchctl bootout gui/$UID/com.example.legwork.run
+
+  注意事项：
+  - WorkingDirectory 必须是受信任的 git 仓库，codex exec 在仓库外会拒绝运行。
+  - 登录过期、电脑休眠、宿主额度用尽都会让本轮失败；失败时本轮不发送。
+  - 日志里会打印 run_id，续作用 --resume-run <run_id>。
+-->
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.example.legwork.run</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/Users/you/.local/bin/legwork</string>
+    <string>--data-dir</string>
+    <string>/Users/you/.legwork</string>
+    <string>run</string>
+    <string>--config</string>
+    <string>/Users/you/legwork.config.json</string>
+  </array>
+  <key>WorkingDirectory</key>
+  <string>/Users/you/your-project</string>
+  <key>StartCalendarInterval</key>
+  <array>
+    <dict>
+      <key>Weekday</key>
+      <integer>1</integer>
+      <key>Hour</key>
+      <integer>10</integer>
+      <key>Minute</key>
+      <integer>7</integer>
+    </dict>
+    <dict>
+      <key>Weekday</key>
+      <integer>3</integer>
+      <key>Hour</key>
+      <integer>10</integer>
+      <key>Minute</key>
+      <integer>7</integer>
+    </dict>
+  </array>
+  <key>StandardOutPath</key>
+  <string>/Users/you/.legwork/launchd.out.log</string>
+  <key>StandardErrorPath</key>
+  <string>/Users/you/.legwork/launchd.err.log</string>
+</dict>
+</plist>
