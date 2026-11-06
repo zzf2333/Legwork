@@ -20,7 +20,7 @@ description: 与用户一起把 BOSS 投递需求整理成 legwork 的配置文�
    - `live`：是否允许操作真实平台。首次配置建议 `false`，先用离线 fixture 走通流程。
 3. 把配置写到用户指定路径，例如 `~/legwork/config.json`（不要提交到公开仓库，也不要写进源码或默认配置）。
 4. 运行 `legwork config check --config <路径>`，确认没有报错，并把 `account_id`、`config_digest` 和 `live` 报告给用户。
-5. 选定专用数据目录（`--data-dir`，例如 `~/legwork/data`）：一个目录只服务一个账号和一种通道，演练用 `--fixtures`、真实运行都各自独立，不要共用同一个目录。当前 schema 为 `4`，旧版本目录会被拒绝而不是迁移或清空。
+5. 选定专用数据目录（`--data-dir`，例如 `~/legwork/data`）：一个目录只服务一个账号和一种通道，演练用 `--fixtures`、真实运行都各自独立，不要共用同一个目录。当前 schema 为 `5`，旧版本目录会被拒绝而不是迁移或清空。
 6. 浏览器准备（只在用户同意操作真实平台后）：让用户自己安装 ego lite、登录 BOSS、把城市选到配置的城市，记下空间名与页面标签（形如 `p1`、`p2`）填进 `browser`。
 
 ## 硬条件写法

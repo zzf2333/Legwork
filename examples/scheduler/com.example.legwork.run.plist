@@ -4,13 +4,14 @@
   使用步骤（由用户自己执行）：
   1. 复制到 ~/Library/LaunchAgents/com.example.legwork.run.plist 并按实际路径修改。
   2. launchctl bootstrap gui/$UID ~/Library/LaunchAgents/com.example.legwork.run.plist
-  3. 查看日志：tail -f /Users/you/.legwork/launchd.out.log
+  3. 查看日志：tail -f /Users/you/legwork/launchd.out.log
   卸载：launchctl bootout gui/$UID/com.example.legwork.run
 
   注意事项：
-  - WorkingDirectory 必须是受信任的 git 仓库，codex exec 在仓库外会拒绝运行。
+  - WorkingDirectory 是克隆下来的 Legwork 仓库目录；codex exec 在仓库外会拒绝运行。
+  - 不需要 pip 安装，直接调 python3 -m legwork。
   - 登录过期、电脑休眠、宿主额度用尽都会让本轮失败；失败时本轮不发送。
-  - 日志里会打印 run_id，续作用 --resume-run <run_id>。
+  - 日志里会打印 run_id，续作用 run 的 resume-run 参数。
 -->
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
@@ -19,15 +20,17 @@
   <string>com.example.legwork.run</string>
   <key>ProgramArguments</key>
   <array>
-    <string>/Users/you/.local/bin/legwork</string>
+    <string>/usr/bin/python3</string>
+    <string>-m</string>
+    <string>legwork</string>
     <string>--data-dir</string>
-    <string>/Users/you/.legwork</string>
+    <string>/Users/you/legwork/data</string>
     <string>run</string>
     <string>--config</string>
-    <string>/Users/you/legwork.config.json</string>
+    <string>/Users/you/legwork/config.json</string>
   </array>
   <key>WorkingDirectory</key>
-  <string>/Users/you/your-project</string>
+  <string>/Users/you/Legwork</string>
   <key>StartCalendarInterval</key>
   <array>
     <dict>
@@ -48,8 +51,8 @@
     </dict>
   </array>
   <key>StandardOutPath</key>
-  <string>/Users/you/.legwork/launchd.out.log</string>
+  <string>/Users/you/legwork/launchd.out.log</string>
   <key>StandardErrorPath</key>
-  <string>/Users/you/.legwork/launchd.err.log</string>
+  <string>/Users/you/legwork/launchd.err.log</string>
 </dict>
 </plist>

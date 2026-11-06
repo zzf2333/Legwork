@@ -41,49 +41,55 @@
 ```
 你写的配置：简历事实 · 硬条件 · 额度 · 城市
       │
-      ├─ legwork prepare     采集 → 去重 → 额度/身份检查 → 建立运行
-      ├─ legwork packet      导出一个批次（岗位 + 简历事实 + 语义条件）
-      │        ⇅
-      │  你的 agent           判断 + 写正文 → 返回 JSON
-      ├─ legwork decide      校验格式、预算与契约，原子接收
-      ├─ legwork finalize    核对准备完成（候选处理完或预算耗尽）
-      ├─ legwork run/send    点击 → 滚动定位会话 → 填正文 → 核对送达
-      └─ legwork today       一岗一行看结果，异常留给你决定
+      └─ legwork run
+            采集 → 去重 → 额度/身份检查 → 建立运行
+                   ⇅  程序自动调用你本机的宿主模型：判断 + 写正文
+            校验决策 → 点击 → 核对送达回执
+           └─ legwork today   一岗一行看结果，异常留给你决定
 ```
 
 默认 `run` 会先做完本轮全部准备，再进入发送；加 `--prepare-only` 只准备不发送。
 
+内部阶段（`prepare` / `packet` / `decide` / `finalize` / `send`）仍然存在，但由 `run` 串起来，普通使用不需要逐条调用。
+
 ## 快速开始
 
-### 前置
+### 前提
 
 - Python 3.11+，macOS 或 Linux（进程互斥用 `fcntl`）。
 - [ego-browser](https://www.npmjs.com/package/ego-browser)（ego lite）：首版显式依赖它操作浏览器，不承诺通用浏览器支持。
-- 你自己已登录的 BOSS 直聘账号，以及一个能执行 Bash 的 CLI agent（用于判断）。
+- 你自己已登录的 BOSS 直聘账号，以及一个能执行 Bash 的 CLI agent（负责判断和写招呼）。
 
-浏览器部分需要你手动准备：装好 ego lite、登录、把城市选到配置里的城市、记下空间名与两个页面标签（例如 `p1`、`p2`），填进配置。首次使用前建议先跑一次 `ego-browser skill` 阅读当前版本的用法。
+不需要 pip 安装，也不用单独安装 Skill。浏览器部分要你手动准备：装好 ego lite、登录、把城市选到配置里的城市、记下空间名与两个页面标签（例如 `p1`、`p2`），填进配置。首次使用前建议先跑一次 `ego-browser skill` 阅读当前版本的用法。
 
-### 安装
+### 三步
 
-PyPI 尚未发布，目前从源码安装：
+先下载并在该目录工作：
 
 ```bash
 git clone https://github.com/zzf2333/Legwork.git
 cd Legwork
-python3 -m venv .venv && . .venv/bin/activate
-pip install -e .
-legwork --help
 ```
 
-也可以不安装，直接在源码目录用 `python3 -m legwork ...`。
+在这个目录打开你已登录的 CLI agent，说「跑一轮投递」。agent 按仓库自带的 Skill 执行：首次用 `legwork/resources/skills/legwork-configure/SKILL.md` 生成配置，之后每次用 `legwork/resources/skills/legwork-run/SKILL.md` 跑一轮。
 
-### 离线试跑（不接触真实平台）
+主路径只有一条命令：
+
+```bash
+python3 -m legwork run --config ~/legwork/config.json
+```
+
+它完成采集 → 去重 → 额度与身份检查 → 调用本机宿主模型判断并写正文 → 校验决策 → 发送 → 核对送达回执。不用自己导出批次或手写 JSON。
+
+配置和数据都放仓库外，避免误提交：配置建议 `~/legwork/config.json`，数据目录用 `--data-dir ~/legwork/data`。仓库默认的 `./.legwork` 已在 `.gitignore` 里，但一个数据目录只服务一个账号、一种通道。
+
+### 先离线演练一次（不接触真实平台）
 
 ```bash
 cp examples/config.example.json /tmp/legwork.config.json
-legwork --data-dir /tmp/legwork-data prepare --config /tmp/legwork.config.json \
+python3 -m legwork --data-dir /tmp/legwork-data prepare --config /tmp/legwork.config.json \
   --fixtures examples/fixtures --now 2026-03-02T10:00:00+08:00
-legwork --data-dir /tmp/legwork-data status --config /tmp/legwork.config.json
+python3 -m legwork --data-dir /tmp/legwork-data status --config /tmp/legwork.config.json
 ```
 
 `--fixtures` 让输入和浏览器都走离线替身：不启动 ego-browser，不会向任何人发消息。
@@ -96,38 +102,47 @@ cat > /tmp/host-offline <<EOF
 exec python3 "$PWD/tests/fake_host.py" "\$@"
 EOF
 chmod +x /tmp/host-offline
-legwork --data-dir /tmp/legwork-data2 run --config /tmp/legwork.config.json \
+python3 -m legwork --data-dir /tmp/legwork-data2 run --config /tmp/legwork.config.json \
   --fixtures examples/fixtures --host-command /tmp/host-offline \
   --now 2026-03-02T10:00:00+08:00
 ```
 
 示例配置里 `live=false`，所以这条命令会停在 `ready_live_disabled`，零发送——这正是预期行为。
 
-### 在自己的实例上跑
+### 首次真实运行前
 
-1. 复制 `examples/config.example.json` 到仓库外（例如 `~/legwork/config.json`），按自己的账号、城市、关键词、简历事实、硬条件、额度和时区填写。
-2. 校验：`legwork config check --config ~/legwork/config.json`。
-3. 选一个专用数据目录，例如 `--data-dir ~/legwork/data`。一个目录只服务一个账号、一种通道（`--fixtures` 与真实平台不能混用）。
-4. 采集与准备：`prepare` → 交给 agent 判断 → `packet` / `decide`，或直接用 `run --prepare-only` 一次做完。
-5. 发送前自己核对目标、正文、数量与停止条件，再执行 `send` 或 `run`。
+以 `examples/config.example.json` 为格式参考，按自己的账号、城市、关键词、简历事实、硬条件、额度和时区填写，写到仓库外。
+
+- 校验：`python3 -m legwork config check --config ~/legwork/config.json`（配置 Skill 会做这一步）。
+- `live=false` 时只允许 `--fixtures`；确认过流程、条件和话术后再改成 `true`。
+- 发送前自己核对目标、正文、数量与停止条件。
 
 仓库只带虚构的示例配置和 fixture。简历、投递条件、账号、城市和额度由你在本机填写，不写进仓库。
 
 ## 命令
 
+主路径：
+
 | 命令 | 作用 |
 | --- | --- |
+| `run` | 跑一轮：准备 → 调用宿主判断 → 校验 → 发送。日常只用这一条 |
 | `config check` | 校验配置，输出账号绑定与 `config_digest` |
+| `today` | 今日投递清单一岗一行；`--job <job_id>` 看完整 JD、话术与执行结果。零模型、零浏览器 |
+| `followup` | 对 `uncertain` 岗位向**已存在会话**补发定制正文；不点「立即沟通」、不新增占用，必须 `--job` 指定 |
+| `status` | 状态计数、今日额度与最近运行，不含 JD、简历或聊天内容 |
+| `assets` | 打印随包资源路径（schema、JS、Skills） |
+
+分步命令（排障与离线演练用，不是普通用户路径；`run` 内部就是按这个顺序调用）：
+
+| 命令 | 作用 |
+| --- | --- |
 | `prepare` | 采集条目：入选的待判断、排除的写明原因、无稳定 ID 的记采集异常；建立运行 |
 | `packet` | 导出一批岗位、简历事实与语义条件；空批次输出 `packet_id: null` |
 | `decide` | 整批校验并原子接收 agent 结果；重复提交相同结果幂等，已执行项不改写 |
 | `finalize` | 核对准备完成：只有候选已处理完或预算耗尽才允许结束 |
 | `send` | 只发送准备完成且仍有效的记录；核对账号、岗位、JD 摘要、历史、草稿与回复 |
-| `followup` | 对 `uncertain` 岗位向**已存在会话**补发定制正文；不点「立即沟通」、不新增占用，必须 `--job` 指定 |
-| `today` | 今日投递清单一岗一行；`--job <job_id>` 看完整 JD、话术与执行结果。零模型、零浏览器 |
-| `status` | 状态计数、今日额度与最近运行，不含 JD、简历或聊天内容 |
-| `run` | 单次定时入口：完成全部准备 → 发送 |
-| `assets` | 打印随包资源路径（schema、JS、Skills） |
+
+分开调用时：`prepare` → 把 `packet` 导出的批次交给 agent 判断 → `decide` 接收结果 → `finalize` 核对 → `send`。只有本轮候选已处理完或预算耗尽才能完成准备；`failed` 必须用 `run --resume-run <run_id>` 显式续作。
 
 退出码：`0` 成功；`2` 配置或用法错误；`3` 按配置/状态拒绝；`4` 浏览器或宿主失败、或发送结果不确定。拒绝与错误以 JSON 写到 stderr：
 
@@ -225,16 +240,18 @@ legwork --data-dir /tmp/legwork-data2 run --config /tmp/legwork.config.json \
 
 ## Skills
 
-`legwork/resources/skills/` 下有两份 Skill，供你的 agent 读取：
+`legwork/resources/skills/` 下有两份 Skill，随仓库提供，不用单独安装：
 
-- `legwork-configure`：和你一起把需求整理成配置，只摘取可溯源事实。
-- `legwork-run`：手动或定时跑一轮，含停止条件。
+- `legwork-configure`：第一次使用时把需求整理成配置，只摘取可溯源事实。
+- `legwork-run`：跑一轮，含停止条件。
 
-用 `legwork assets` 拿到实际路径，再按宿主自己的 Skill 发现方式接入（复制或软链）。Skill 不依赖某个宿主的工具名。
+仓库根目录的 `AGENTS.md` 指向这两份 Skill，Codex、Claude Code、Pi 等入口打开仓库就能读到。宿主不读 `AGENTS.md` 时，直接按文件路径读，或按它自己的发现方式复制/软链。Skill 不依赖某个宿主的工具名，`python3 -m legwork assets` 可打印实际路径。
 
 ## 定时
 
 示例见 [`examples/scheduler/crontab.example`](examples/scheduler/crontab.example) 与 [`examples/scheduler/com.example.legwork.run.plist`](examples/scheduler/com.example.legwork.run.plist)。工具只提供示例，不会自动安装、加载或卸载任何服务。
+
+定时同样只有一条命令：工作目录设为克隆下来的 Legwork 目录（`run` 的宿主调用要求 cwd 在受信任的 git 仓库里），用 `python3 -m legwork ... run` 调用，不需要 pip 安装。
 
 真实通道（不带 `--fixtures`）不接受 `--now`：发送日期按配置时区的实际时间判定，发送前与每次占用前都会重新取时间，跨日立即停止。`--now` 只用于离线复查。
 
