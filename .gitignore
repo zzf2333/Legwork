@@ -7,6 +7,7 @@ dist/
 *.egg-info/
 .legwork/
 .runtime/
+.browser-*.lock
 .pi/
 .DS_Store
 .ruff_cache/

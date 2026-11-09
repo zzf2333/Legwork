@@ -9,7 +9,7 @@ import json
 import uuid
 from pathlib import Path
 
-from . import daily
+from . import daily, ego
 from .errors import PolicyError
 from .records import JOB_FIELDS, identity_keys, job_url, snapshot_digest
 
@@ -21,7 +21,8 @@ def prepare(store, config, source, now) -> dict:
     day = now.date().isoformat()
     store.bind_account(config.account_id)
     store.require_mode(source.mode)
-    snapshot = source.collect(config, now)
+    with ego.browser_lock(store.path.parent, space=config.browser["space"]):
+        snapshot = source.collect(config, now)
     if snapshot.get("history_complete") is not True:
         raise PolicyError("history_incomplete", "平台联系历史不完整，不能继续准备")
     store.record_platform_contacts(config.account_id, snapshot["contacts"], now.isoformat())

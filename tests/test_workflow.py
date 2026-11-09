@@ -45,7 +45,7 @@ class BrowserLockTest(unittest.TestCase):
         )
         self.assertEqual(finalized.returncode, 0, finalized.stderr)
 
-        with ego.browser_lock(self.data, timeout=0):
+        with ego.browser_lock(self.data, space="legwork", timeout=0):
             blocked = support.run_cli(
                 self.tmp, self.data, "send", "--run-id", run_id,
                 "--config", str(self.config), "--fixtures", str(self.fixtures), "--now", NOW,
@@ -55,6 +55,24 @@ class BrowserLockTest(unittest.TestCase):
         self.assertEqual(
             json.loads(support.run_cli(self.tmp, self.data, "status").stdout)["jobs"]["sent"], 0
         )
+
+    def test_space_lock_is_shared_across_data_dirs(self):
+        """同一父目录下的两个数据目录共用一个 ego 空间时，第二个进程必须被挡住。"""
+        other = self.tmp / "other"
+        with (
+            ego.browser_lock(self.data, space="legwork", timeout=0),
+            self.assertRaises(ego.BrowserBusy),
+            ego.browser_lock(other, space="legwork", timeout=0),
+        ):
+            pass
+
+    def test_different_space_does_not_block(self):
+        other = self.tmp / "other"
+        with (
+            ego.browser_lock(self.data, space="legwork", timeout=0),
+            ego.browser_lock(other, space="other", timeout=0),
+        ):
+            pass
 
 
 if __name__ == "__main__":

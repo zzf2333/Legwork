@@ -56,7 +56,7 @@
 
 ### 前提
 
-- Python 3.11+，macOS 或 Linux（进程互斥用 `fcntl`）。
+- Python 3.11+，macOS 或 Linux（进程互斥用 `fcntl`）。同一 `browser.space` 的数据目录共用一个锁，放在各自数据目录的父目录下；不同方向共用一个 ego 空间时，把它们放在同一父目录即可互斥。
 - [ego-browser](https://www.npmjs.com/package/ego-browser)（ego lite）：首版显式依赖它操作浏览器，不承诺通用浏览器支持。
 - 你自己已登录的 BOSS 直聘账号，以及一个能执行 Bash 的 CLI agent（负责判断和写招呼）。
 
@@ -82,6 +82,8 @@ python3 -m legwork run --config ~/legwork/config.json
 它完成采集 → 去重 → 额度与身份检查 → 调用本机宿主模型判断并写正文 → 校验决策 → 发送 → 核对送达回执。不用自己导出批次或手写 JSON。
 
 配置和数据都放仓库外，避免误提交：配置建议 `~/legwork/config.json`，数据目录用 `--data-dir ~/legwork/data`。仓库默认的 `./.legwork` 已在 `.gitignore` 里，但一个数据目录只服务一个账号、一种通道。
+
+一个账号按方向拆成多个数据目录时（例如 `~/legwork/data-frontend`、`~/legwork/data-fullstack`），把它们的配置指向同一个 `browser.space`，并放在同一父目录下：采集和发送都会先取该空间的共享锁，第二个进程直接报 `browser_busy`，不会两个进程同时操作同一组页面。
 
 ### 先离线演练一次（不接触真实平台）
 

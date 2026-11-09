@@ -35,9 +35,19 @@ class BrowserBusy(BrowserError):
 
 
 @contextlib.contextmanager
-def browser_lock(data_dir: str | Path, timeout: float = 0.0):
-    """本地进程互斥。只防本机并发，不是平台分布式锁，也不保证端到端恰好一次。"""
-    path = Path(data_dir) / "browser.lock"
+def browser_lock(data_dir: str | Path, space: str | None = None, timeout: float = 0.0):
+    """本地进程互斥。
+
+    提供 space 时按浏览器空间共享锁：同一父目录下的数据目录互斥，防止不同方向
+    同时操作同一个 ego 空间的页面。未提供时退回数据目录级锁。
+    只防本机并发，不是平台分布式锁，也不保证端到端恰好一次。
+    """
+    base = Path(data_dir).resolve()
+    if space is None:
+        path = base / "browser.lock"
+    else:
+        name = re.sub(r"[^0-9A-Za-z_.-]", "_", str(space))
+        path = base.parent / f".browser-{name}.lock"
     path.parent.mkdir(parents=True, exist_ok=True)
     with open(path, "a+", encoding="utf-8") as handle:
         deadline = time.monotonic() + timeout

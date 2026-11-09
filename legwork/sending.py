@@ -59,7 +59,7 @@ def send_ready(store, config, run, browser, *, clock, data_dir=None, job_ids=Non
     ):
         raise PolicyError("daily_limit", f"今日首次沟通额度已用满：{used}/{config.daily_limit}")
 
-    with ego.browser_lock(data_dir or store.path.parent):
+    with ego.browser_lock(data_dir or store.path.parent, space=config.browser["space"]):
         return _send_loop(store, config, run, browser, clock, day, targets)
 
 
@@ -165,7 +165,7 @@ def follow_up(store, config, run, browser, *, clock, data_dir=None, job_ids=None
     if not targets:
         raise PolicyError("nothing_uncertain", "该运行没有结果不明、可补发的岗位")
     now = clock()
-    with ego.browser_lock(data_dir or store.path.parent):
+    with ego.browser_lock(data_dir or store.path.parent, space=config.browser["space"]):
         return _follow_up_loop(store, config, run, browser, now, targets)
 
 
