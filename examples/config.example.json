@@ -51,6 +51,7 @@
   "dedupe_scope": ["job", "boss", "company"],
   "daily_limit": 5,
   "batch_size": 3,
+  "collect_per_keyword": 0,
   "browser": {
     "space": "legwork",
     "job_page": "p2",

@@ -108,8 +108,8 @@ class DailyReviewTests(daily_tests.DailyCase):
     def test_source_anomalies_and_all_keyword_origins_reach_daily_view(self):
         config = config_module.load(self.config_path)
         class Browser(daily_tests.FakeLiveBrowser):
-            def search(self, keyword, city_code):
-                result = super().search(keyword, city_code)
+            def search(self, keyword, city_code, limit=0):
+                result = super().search(keyword, city_code, limit)
                 result['rows'].append({'job_id': 'job-missing', 'title': '缺身份岗位', 'href_id': 'job-missing'})
                 return result
         browser = Browser()

@@ -102,6 +102,7 @@ class EgoBrowser:
         self.chat_page = config.browser["chat_page"]
         self.platform_user_id = config.platform_user_id
         self.city_code = config.city_code
+        self.collect_per_keyword = config.collect_per_keyword
         self.dedupe_scope = config.dedupe_scope
         self.binary = binary
         self.timeout = timeout
@@ -109,6 +110,7 @@ class EgoBrowser:
         self._guard_js = resource_text("js/ego_click_guard.js")
         self._collect_js = resource_text("js/ego_collect.js")
         self._locate_js = resource_text("js/ego_chat_locate.js")
+        self._search_body = resource_text("js/ego_search.js")
 
     # -- 页面读取 -----------------------------------------------------------
     def card_state(self) -> dict:
@@ -144,9 +146,13 @@ class EgoBrowser:
         )
 
     def open_job(self, job: dict) -> dict:
-        """在已有列表页里找到目标岗位并打开详情；不直接跳转详情 URL，也不假设页面结构不同。"""
+        """在已有列表页里找到目标岗位并打开详情；不直接跳转详情 URL，也不假设页面结构不同。
+
+        详情读完回到列表时列表会重新加载，所以按同样的采集上限找回岗位：
+        否则超出首屏的候选在采集阶段就点不开。
+        """
         if job.get("source_keyword"):
-            self.search(job["source_keyword"], self.city_code)
+            self.search(job["source_keyword"], self.city_code, self.collect_per_keyword)
         return self._run(
             "open",
             job_id=job["job_id"],
@@ -201,54 +207,23 @@ class EgoBrowser:
         )
 
     # -- 列表导航 -----------------------------------------------------------
-    def search(self, keyword: str, city_code: str) -> dict:
-        return self._run(
+    def search(self, keyword: str, city_code: str, limit: int = 0) -> dict:
+        """按关键词搜索列表。
+
+        limit>0 时滚动到底部加载更多，直到条目数达到 limit 或页面显示「没有更多了」。
+        加载失败保留已读条目，在结果里带 load_error 交给调用方记采集异常。
+        """
+        result = self._run(
             "search",
-            body="""
-    const current = new URL(await job.url());
-    if (current.origin !== 'https://www.zhipin.com') throw Error('Wrong job page origin');
-    if (/^\\/job_detail\\/[^/]+\\.html$/.test(current.pathname)) {
-      const url = 'https://www.zhipin.com/web/geek/jobs?'+new URLSearchParams({city:a.city_code,query:a.keyword});
-      await job.goto(url, {timeout:25000});
-      await job.waitForFunction(() => {
-        const main=document.querySelector('.page-jobs-main')?.__vue__;
-        return main?.loading===false && Array.isArray(main.jobList);
-      }, undefined, {timeout:15000});
-    }
-    const before = await job.evaluate(collect, { self: a.self, city_code: a.city_code, action: 'read' });
-    let watchKey = null;
-    try {
-      if (before.query !== a.keyword || !before.search_active) {
-        watchKey = '__bossSearch_' + Math.random().toString(36).slice(2);
-        await job.evaluate(key => {
-          const state = {complete:false};
-          state.observer = new PerformanceObserver(list => {
-            if (list.getEntries().some(e => e.responseEnd > 0 &&
-                new URL(e.name).pathname === '/wapi/zpgeek/search/joblist.json')) state.complete = true;
-          });
-          globalThis[key] = state;
-          state.observer.observe({type:'resource'});
-        }, watchKey);
-        await job.fill('loc=css:input[placeholder="搜索职位、公司"]', a.keyword);
-        await job.press('loc=css:input[placeholder="搜索职位、公司"]', 'Enter');
-      }
-      await job.waitForFunction(({keyword, watchKey}) => {
-        const query = new URL(location.href).searchParams.get('query');
-        const main = document.querySelector('.page-jobs-main')?.__vue__;
-        const completed = watchKey === null || globalThis[watchKey]?.complete === true;
-        return completed && query === keyword && main?.loading === false && Array.isArray(main.jobList) &&
-          document.querySelectorAll('li.job-card-box').length === main.jobList.length;
-      }, {keyword:a.keyword, watchKey}, {timeout:15000});
-      return { list: await job.evaluate(collect, {self:a.self, city_code:a.city_code, action:'read'}) };
-    } finally {
-      if (watchKey) await job.evaluate(key => {
-        globalThis[key]?.observer.disconnect();
-        delete globalThis[key];
-      }, watchKey);
-    }""",
+            body=self._search_body,
             keyword=keyword,
             city_code=city_code,
-        )["list"]
+            limit=limit,
+        )
+        state = result["list"]
+        if result.get("load_error"):
+            state["load_error"] = result["load_error"]
+        return state
 
     # -- 受控点击 -----------------------------------------------------------
     def click_contact(self, job: dict) -> dict:

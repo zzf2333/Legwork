@@ -49,6 +49,7 @@ class Config:
     dedupe_scope: tuple[str, ...]
     daily_limit: int
     batch_size: int
+    collect_per_keyword: int
     browser: dict
     timezone: str
     live: bool
@@ -135,6 +136,7 @@ def parse(document: dict, path: str | Path = "<memory>") -> Config:
 
     daily_limit = _bounded_int(document, "daily_limit", 1, 100)
     batch_size = _bounded_int(document, "batch_size", 1, 20)
+    collect_per_keyword = _bounded_int(document, "collect_per_keyword", 0, 100, default=0)
 
     browser = document.get("browser")
     if not isinstance(browser, dict):
@@ -173,6 +175,7 @@ def parse(document: dict, path: str | Path = "<memory>") -> Config:
         dedupe_scope=tuple(dedupe_scope),
         daily_limit=daily_limit,
         batch_size=batch_size,
+        collect_per_keyword=collect_per_keyword,
         browser={**browser, **pages},
         timezone=timezone,
         live=live,
@@ -209,8 +212,8 @@ def _text_list(document: dict, key: str) -> list[str]:
     return [item.strip() for item in value]
 
 
-def _bounded_int(document: dict, key: str, low: int, high: int) -> int:
-    value = document.get(key)
+def _bounded_int(document: dict, key: str, low: int, high: int, *, default: int | None = None) -> int:
+    value = document.get(key, default)
     if isinstance(value, bool) or not isinstance(value, int) or not low <= value <= high:
         raise ConfigError(f"{key} 必须是 {low}..{high} 之间的整数")
     return value

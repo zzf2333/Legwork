@@ -154,7 +154,7 @@ python3 -m legwork --data-dir /tmp/legwork-data2 run --config /tmp/legwork.confi
 
 ## 配置
 
-配置是一份 JSON，字段全部必填，程序不内置城市、关键词、额度或话术：
+配置是一份 JSON，除 `collect_per_keyword` 外字段全部必填，程序不内置城市、关键词、额度或话术：
 
 | 字段 | 说明 |
 | --- | --- |
@@ -169,6 +169,7 @@ python3 -m legwork --data-dir /tmp/legwork-data2 run --config /tmp/legwork.confi
 | `dedupe_scope` | `job` / `boss` / `company` 的组合，跨任务与批内去重口径 |
 | `daily_limit` | 每日首次沟通额度，按已占用计数并跨运行累计 |
 | `batch_size` | 每批岗位数，1..20 |
+| `collect_per_keyword` | 每个关键词采集到多少条为止，0..100；缺省 `0` 只读首屏，大于 0 时滚动加载更多 |
 | `browser` | `{"space","job_page","chat_page"}`，Ego 空间名或编号加两个页面标签 |
 | `timezone` | 判定「今天」和旧任务的时区 |
 | `live` | 是否允许操作真实平台；`false` 时只允许 `--fixtures` |
@@ -242,13 +243,14 @@ python3 -m legwork --data-dir /tmp/legwork-data2 run --config /tmp/legwork.confi
 | 脚本 | 职责 |
 | --- | --- |
 | `ego_collect.js` | 在已登录、城市已选好的列表页按卡片读岗位；身份或账号不符就停 |
+| `ego_search.js` | `search` 动作的脚本体：按关键词搜索，按 `collect_per_keyword` 滚动加载更多，到条数上限或页面显示「没有更多了」就停 |
 | `ego_page_state.js` | 读详情页与聊天页的规范化状态（账号、岗位身份、历史是否完整、草稿、送达） |
 | `ego_click_guard.js` | 点击前重新核对会话身份、历史完整性、草稿与是否已有回复 |
 | `ego_chat_locate.js` | 会话列表是虚拟滚动、只渲染可视窗口，所以从头递减滚动查找；同一身份出现两次就停，不猜 |
 
 发送顺序：定位并打开目标岗位 → 核对账号、岗位身份与 JD 摘要 → 核对历史完整且无既有联系 → 点「立即沟通」→ 按身份滚动查找并选中会话 → 核对唯一的己方默认消息已送达 → 填定制正文 → 再核对会话未变 → 发送 → 等待并核对定制正文的唯一送达回执。
 
-历史加载最多推进 30 批，遇到无进展或超时停止，只有页面明确显示完整历史才继续。搜索时临时监听网页正常产生的列表请求完成，不主动重放接口。
+历史加载最多推进 30 批，遇到无进展或超时停止，只有页面明确显示完整历史才继续。搜索时临时监听网页正常产生的列表请求完成，不主动重放接口。配置 `collect_per_keyword` 后，搜索完首屏再滚动列表底部，每轮至少要多出一条岗位，步数不超过该上限；单个关键词加载更多失败或超时只记采集异常（`load_more_failed`），保留已加载条目并继续下一个关键词。
 
 ## Skills
 
@@ -286,7 +288,7 @@ python3 -m legwork --data-dir /tmp/legwork-data2 run --config /tmp/legwork.confi
 - 只在作者本人账号、单城市、少量关键词上验证过。站点改版、账号状态、页面标签或登录态变化都可能让本轮失败，失败即停止，不猜测重试。
 - 只实现了 BOSS 直聘一个平台（`sources` 层按平台隔离）。名字不承诺其他平台已支持。
 - 只做首次沟通与定制招呼：不发送附件简历、不自动回复招聘者、不做多用户托管。
-- 采集只读每个关键词已加载的列表，不承诺遍历站点全部搜索结果；发送时目标不在列表就停止，不猜相似岗位。
+- 采集默认只读每个关键词首屏；设置 `collect_per_keyword` 后滚动加载到该条数上限或页面显示「没有更多了」，仍不承诺遍历站点全部搜索结果。发送时目标不在列表就停止，不猜相似岗位。
 - 不加结果缓存：已被 `skip` 的岗位下一轮仍会重新判断（低 Token 靠「一次一个批次、只带本批岗位与事实」实现）。
 - 旧 schema（含开发版 3、4）不自动迁移，请用新的隔离数据目录，原数据保留供核对。
 
@@ -299,7 +301,7 @@ python3 -m legwork --data-dir /tmp/legwork-data2 run --config /tmp/legwork.confi
 ## 开发与验证
 
 ```bash
-python3 -m unittest discover -s tests -v     # 126 项
+python3 -m unittest discover -s tests -v     # 135 项
 ruff check legwork tests                      # 通过
 node tests/js/guard_contract.mjs              # 点击守卫契约
 node tests/js/locate_contract.mjs             # 虚拟滚动定位契约

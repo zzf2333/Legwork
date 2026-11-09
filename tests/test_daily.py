@@ -173,7 +173,7 @@ class FakeLiveBrowser:
     def load_history(self):
         return {"history_complete": True, "contacts": []}
 
-    def search(self, keyword, city_code):
+    def search(self, keyword, city_code, limit=0):
         return {
             "rows": [
                 {"job_id": "job-ok1", "company": "示例一号科技", "boss_id": "boss-01",

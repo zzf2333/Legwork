@@ -14,9 +14,15 @@ class PerformanceObserver {
   disconnect(){observers.delete(this);}
 }
 const jobs = Object.fromEntries(state.jobs.map(j => [j.job_id, j]));
+// 列表分页替身：keywordBatches 给出每页岗位 ID，滚动一次加载下一页。
+const batchIds = query => {
+  const batches = state.keywordBatches?.[query];
+  if(!batches) return state.keywords[query] || [];
+  return batches.slice(0, state.loadedBatches?.[query] ?? 1).flat();
+};
 const source = j => ({encryptJobId:j.job_id, brandName:j.company, encryptBossId:j.boss_id,
   jobName:j.title, salaryDesc:j.salary, cityName:j.address, uid:'uid-'+j.boss_id, uniqueId:'conv-'+j.boss_id});
-const rows = () => state.requestDelay > 0 ? (state.keywords[state.previousQuery] || []).map(id => jobs[id]) : state.loadingTicks > 0 ? [] : (state.keywords[state.query] || []).map(id => jobs[id]);
+const rows = () => state.requestDelay > 0 ? batchIds(state.previousQuery).map(id => jobs[id]) : state.loadingTicks > 0 ? [] : batchIds(state.query).map(id => jobs[id]);
 const store = {$store:{state:{userInfo:{userId:state.self}}}};
 function message(text, mid) {
   return {mid, uniqueId:state.selected.uniqueId, fromId:state.self, toId:state.selected.uid, text, received:true};
@@ -55,7 +61,8 @@ function pageDOM(kind) {
     return {parentElement:{__vue__:{$props:{data:source(j)}}},getClientRects:()=>[1],
       querySelector:()=>link,click(){state.opened=j.job_id;},link};
   }
-  const document = {body:{innerText:''},activeElement:null,
+  const document = {body:{get innerText(){return kind==='job' && state.listExhausted ? '没有更多了' : '';}},activeElement:null,
+    documentElement:{get scrollHeight(){return 800 + batchIds(state.query).length * 120;}},
     execCommand(_name,_ui,text){state.draft=text;return true;},
     querySelector(selector) {
       if(kind==='job') {
@@ -121,7 +128,16 @@ function page(kind) {
       [{name:'https://www.zhipin.com/wapi/zpgeek/search/joblist.json',startTime:state.requestStart,responseEnd:state.requestStart+1}] : [];
     const performance={now:()=>state.time,getEntriesByType:()=>state.resourceBufferFull?[]:entries};
     for(const observer of observers) if(entries.length) observer.callback({getEntries:()=>entries});
-    const sandbox=Object.assign(globals[kind],{document:pageDOM(kind),location,URL,performance,PerformanceObserver,setTimeout,clearTimeout,argument:structuredClone(arg)});
+    const sandbox=Object.assign(globals[kind],{document:pageDOM(kind),location,URL,performance,PerformanceObserver,setTimeout,clearTimeout,scrollTo:()=>{
+      if(kind!=='job') return;
+      state.events.push('list-scroll');
+      const batches=state.keywordBatches?.[state.query];
+      const loaded=state.loadedBatches?.[state.query] ?? 1;
+      if(!batches || loaded >= batches.length) return;
+      state.loadedBatches=state.loadedBatches || {};
+      state.loadedBatches[state.query]=loaded+1;
+      state.loadingTicks=1;
+    },argument:structuredClone(arg)});
     sandbox.window=sandbox;
     if(kind==='job' && state.detailMode) {
       const j=jobs[state.opened];
@@ -141,7 +157,7 @@ function page(kind) {
       const u=new URL(url),id=u.pathname.match(/^\/job_detail\/([^/]+)\.html$/)?.[1];
       state.detailMode=!!id;
       if(id){state.detailURL=url;state.opened=state.redirectJob||id;state.events.push('navigate:'+id);}
-      else {state.query=u.searchParams.get('query');state.loadingTicks=0;state.omitCity=false;}
+      else {state.query=u.searchParams.get('query');state.loadingTicks=0;state.omitCity=false;state.loadedBatches={};}
     },
     async fill(_selector,text){state.previousQuery=state.query;state.query=text;},
     async press(){state.requestStart=state.time;state.requestDelay=state.delayedStart?1:0;state.loadingTicks=3;state.omitCity=false;},

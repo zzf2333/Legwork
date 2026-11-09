@@ -77,7 +77,15 @@ class EgoSource:
         anomalies = []
         cache = {}
         for keyword in config.keywords:
-            state = self.browser.search(keyword, config.city_code)
+            state = self.browser.search(keyword, config.city_code, config.collect_per_keyword)
+            if state.get("load_error"):
+                anomalies.append(
+                    {
+                        "source_keyword": keyword,
+                        "reason": "load_more_failed",
+                        "detail": f"关键词「{keyword}」列表加载更多失败，只用已加载的条目：{state['load_error']}",
+                    }
+                )
             for row in state.get("rows") or []:
                 job_id = str(row.get("job_id") or "")
                 href_id = str(row.get("href_id") or "")

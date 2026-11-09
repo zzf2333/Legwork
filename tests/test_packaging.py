@@ -15,6 +15,7 @@ REQUIRED_RESOURCES = (
     "resources/js/ego_page_state.js",
     "resources/js/ego_click_guard.js",
     "resources/js/ego_collect.js",
+    "resources/js/ego_search.js",
     "resources/js/ego_chat_locate.js",
     "resources/skills/legwork-configure/SKILL.md",
     "resources/skills/legwork-run/SKILL.md",

@@ -53,6 +53,7 @@ def _dispatch(args) -> int:
                 "live": config.live,
                 "daily_limit": config.daily_limit,
                 "batch_size": config.batch_size,
+                "collect_per_keyword": config.collect_per_keyword,
                 "config_digest": config.digest,
             }
         )
