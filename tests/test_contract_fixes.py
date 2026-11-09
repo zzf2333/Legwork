@@ -265,7 +265,7 @@ class BrowserContractTest(unittest.TestCase):
         browser.open_job({"job_id": "job-a1", "company": "示例", "boss_id": "boss-01"})
         self.assertNotIn("job.goto(", captured["body"])
         self.assertIn("li.job-card-box", captured["body"])
-        self.assertIn("link.click()", captured["body"])
+        self.assertIn("links[0].click()", captured["body"])
 
 
 if __name__ == "__main__":

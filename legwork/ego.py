@@ -161,9 +161,16 @@ class EgoBrowser:
       const links = [...document.querySelectorAll('li.job-card-box')].filter(
         (node) => (node.querySelector('a.job-name')?.getAttribute('href') || '').includes('/job_detail/' + id + '.html')
       );
-      const link = links.length === 1 ? links[0] : null;
-      if (!link) return { found: false };
-      link.click();
+      if (links.length === 0) return { found: false };
+      if (links.length > 1) {
+        // 多页加载后同一岗位可能留下多张卡片；身份一致才归并，冲突仍按找不到处理。
+        const identities = new Set(links.map((node) => {
+          const data = node.parentElement?.__vue__?.$props?.data;
+          return [data?.brandName, data?.encryptBossId].join('|');
+        }));
+        if (identities.size !== 1) return { found: false };
+      }
+      links[0].click();
       return { found: true };
     }, { id: a.job_id });
     if (clicked?.found !== true) {
@@ -216,6 +223,8 @@ class EgoBrowser:
         result = self._run(
             "search",
             body=self._search_body,
+            # 每次滚动最多等 10s；总超时按上限放大，保证加载失败能由 JS 返回 load_error，而不是被外层提前掐断。
+            timeout=self.timeout + max(0, limit) * 11,
             keyword=keyword,
             city_code=city_code,
             limit=limit,
@@ -346,7 +355,7 @@ class EgoBrowser:
 
     # -- 内部 ---------------------------------------------------------------
 
-    def _run(self, action: str, *, body: str, **arguments) -> dict:
+    def _run(self, action: str, *, body: str, timeout: float | None = None, **arguments) -> dict:
         payload = json.dumps(
             {"action": action, "self": self.platform_user_id, **arguments}, ensure_ascii=False
         )
@@ -379,7 +388,7 @@ console.log('{RESULT_MARKER}');
                     input=script,
                     capture_output=True,
                     text=True,
-                    timeout=self.timeout,
+                    timeout=timeout if timeout is not None else self.timeout,
                     check=False,
                 )
             except FileNotFoundError as exc:

@@ -71,6 +71,46 @@ class LoadMoreTests(unittest.TestCase):
         # 加载到第二页已超过上限就停：第三页不再滚动。
         self.assertEqual(self.events(), ['list-scroll'])
 
+    def test_scrolls_multiple_pages_to_reach_limit(self):
+        self.load_more_state()
+        result = self.browser.search('first', self.city, 5)
+        self.assertEqual(
+            [row['job_id'] for row in result['rows']],
+            ['job-a1', 'job-a2', 'job-a3', 'job-a4', 'job-intern'],
+        )
+        self.assertNotIn('load_error', result)
+        self.assertEqual(self.events(), ['list-scroll', 'list-scroll'])
+
+    def test_exact_limit_stops_after_one_scroll(self):
+        self.load_more_state()
+        result = self.browser.search('first', self.city, 4)
+        self.assertEqual(
+            [row['job_id'] for row in result['rows']],
+            ['job-a1', 'job-a2', 'job-a3', 'job-a4'],
+        )
+        self.assertNotIn('load_error', result)
+        self.assertEqual(self.events(), ['list-scroll'])
+
+    def test_scroll_budget_extends_browser_timeout(self):
+        browser = self.browser_with_limit(40)
+        captured = {}
+
+        def fake_run(action, *, body, timeout=None, **arguments):
+            captured['timeout'] = timeout
+            return {'list': {'rows': []}}
+
+        browser._run = fake_run
+        browser.search('first', self.city, 40)
+        self.assertEqual(captured['timeout'], browser.timeout + 40 * 11)
+
+    def test_duplicate_card_across_pages_opens_once(self):
+        self.load_more_state()
+        self.state['keywordBatches'] = {'first': [['job-a1', 'job-a2'], ['job-a1', 'job-a3']]}
+        self.save()
+        browser = self.browser_with_limit(3)
+        browser.open_job(support.JOBS[0] | {'source_keyword': 'first'})
+        self.assertEqual(json.loads(self.state_file.read_text())['opened'], 'job-a1')
+
     def test_platform_end_stops_without_anomaly(self):
         self.load_more_state(listExhausted=True)
         self.state['keywordBatches'] = {'first': [['job-a1', 'job-a2']]}
