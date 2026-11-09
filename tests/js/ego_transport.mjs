@@ -64,7 +64,7 @@ function pageDOM(kind) {
     return {parentElement:{__vue__:{$props:{data}}},getClientRects:()=>[1],
       querySelector:()=>link,click(){state.opened=j.job_id;state.cardClicks=(state.cardClicks||0)+1;},link};
   }
-  const document = {body:{get innerText(){return kind==='job' && state.listExhausted ? '没有更多了' : '';}},activeElement:null,
+  const document = {body:{get innerText(){return '';}},activeElement:null,
     documentElement:{get scrollHeight(){return 800 + batchIds(state.query).length * 120;}},
     execCommand(_name,_ui,text){state.draft=text;return true;},
     querySelector(selector) {
@@ -82,7 +82,7 @@ function pageDOM(kind) {
           return null;
         }
         if(selector==='.page-jobs-main') {
-          const j=active();return {__vue__:{...store,loading:!state.requestDelay && state.loadingTicks>0,jobList:rows(),defaultCity:{code:state.city},jobDetailLoading:false,jobDetail:{
+          const j=active();return {__vue__:{...store,loading:!state.requestDelay && state.loadingTicks>0,jobList:rows(),hasMore:!state.listExhausted,defaultCity:{code:state.city},jobDetailLoading:false,jobDetail:{
             jobInfo:{encryptId:j.job_id,encryptUserId:j.boss_id,jobName:j.title,salaryDesc:j.salary,address:j.address,
               postDescription:j.description,invalidStatus:false},
             bossInfo:{name:j.boss_name, activeTimeDesc:j.boss_active || ''},

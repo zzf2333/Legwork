@@ -53,7 +53,7 @@ return await (async () => {
       });
       await job.waitForFunction(({previous}) => {
         const main = document.querySelector('.page-jobs-main')?.__vue__;
-        const done = /没有更多了/.test(document.body.innerText);
+        const done = main?.hasMore === false;
         return done || (main?.loading === false && Array.isArray(main.jobList) &&
           main.jobList.length > previous);
       }, {previous}, {timeout:10000});

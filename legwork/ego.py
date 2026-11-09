@@ -221,7 +221,7 @@ class EgoBrowser:
     def search(self, keyword: str, city_code: str, limit: int = 0) -> dict:
         """按关键词搜索列表。
 
-        limit>0 时滚动到底部加载更多，直到条目数达到 limit 或页面显示「没有更多了」。
+        limit>0 时滚动到底部加载更多，直到条目数达到 limit 或列表标记 `hasMore` 为 false。
         加载失败保留已读条目，在结果里带 load_error 交给调用方记采集异常。
         """
         result = self._run(
