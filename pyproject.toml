@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "legwork-cli"
-version = "0.0.3"
+version = "0.0.4"
 description = "We do the legwork. You make the call. 本机运行的求职执行工具：采集、筛选、投递、回执由程序做，判断与正文由你自己的 agent 做"
 keywords = ["job-search", "job-application", "browser-automation", "agent", "cli"]
 license = { text = "MIT" }
