@@ -8,6 +8,7 @@ dist/
 .legwork/
 .runtime/
 .browser-*.lock
+.use-only
 .pi/
 .DS_Store
 .ruff_cache/

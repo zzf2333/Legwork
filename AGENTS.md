@@ -22,3 +22,16 @@ python3 -m legwork run --config ~/legwork/config.json
 - 验证命令见 README「开发与验证」：`python3 -m unittest discover -s tests -v`、`ruff check legwork tests`、`node tests/js/guard_contract.mjs`、`node tests/js/locate_contract.mjs`。
 - 平台操作面只在 `legwork/ego.py` 与 `legwork/resources/js/`。新增读取或点击动作改这里，不要在别处操作浏览器。
 - 仓库里只放虚构示例。真实简历、账号、聊天记录、平台内部 ID 不进仓库，也不进提交信息和 issue。
+
+## 使用副本
+
+同一个仓库的 clone 有两种用途：
+
+- **开发副本**：改代码、提交、推送。
+- **使用副本**：只跑投递，不改代码。仓库根存在 `.use-only` 文件时即为使用副本。
+
+在使用副本里：
+
+- 不改代码、不 `git add`、不提交。发现问题或需要优化时，先记录现象和证据（`today --job`、`status`、对应 run 目录），然后到 GitHub 提 issue，写明现象、复现步骤和期望行为。
+- 修复在开发副本完成并推送；使用副本只 `git pull`。
+- `.use-only` 是本地标记，已在 `.gitignore` 里，不会被提交；使用副本应装一个拒绝提交的 `pre-commit` hook，检查该文件是否存在。
