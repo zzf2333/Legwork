@@ -44,6 +44,23 @@ class DirectLinkTests(unittest.TestCase):
         state = json.loads(self.state_file.read_text())
         self.assertEqual(state['events'], ['navigate:job-a2'])
 
+    def test_direct_detail_reads_activity_and_size(self):
+        target = self.target() | {'boss_active': '今日活跃', 'company_size': '1000-9999人'}
+        self.state['jobs'] = [self.state['jobs'][0], target]
+        self.save()
+        self.browser.open_saved_job(target)
+        card = self.browser.card_state()
+        self.assertEqual((card['boss_active'], card['company_size']), ('今日活跃', '1000-9999人'))
+        # h2 里同时有招聘者名字文本节点和活跃时间元素，名字不能混进活跃文本。
+        self.assertEqual(card['boss_name'], target['boss_name'])
+
+    def test_direct_detail_without_activity_is_empty(self):
+        target = self.target()
+        self.browser.open_saved_job(target)
+        card = self.browser.card_state()
+        self.assertEqual((card['boss_active'], card['company_size']), ('', ''))
+        self.assertEqual(card['boss_name'], target['boss_name'])
+
     def test_bad_url_is_rejected_before_browser_action(self):
         for url in ['https://example.com/job_detail/job-a2.html',
                     'https://www.zhipin.com/job_detail/job-a1.html', '',
