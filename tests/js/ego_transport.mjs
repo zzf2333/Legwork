@@ -63,7 +63,11 @@ function pageDOM(kind) {
           const j=active();
           if(selector==='.job-sec-text') return {innerText:'  '+j.description+'\n'};
           if(selector==='.location-address') return {innerText:j.address};
-          if(selector==='.job-boss-info h2') return {childNodes:[{nodeType:3,textContent:j.boss_name}]};
+          if(selector==='.job-boss-info h2') return {childNodes:[{nodeType:3,textContent:j.boss_name},
+            {nodeType:1,textContent:j.boss_active || ''}]};
+          if(selector==='.job-boss-info h2 .boss-active-time') return j.boss_active ? {innerText:j.boss_active} : null;
+          if(selector==='.sider-company .icon-scale') return j.company_size ?
+            {closest:()=>({innerText:'  '+j.company_size+'\n'})} : null;
           if(selector==='.job-banner .btn-startchat') return button('contact');
           return null;
         }
@@ -71,7 +75,8 @@ function pageDOM(kind) {
           const j=active();return {__vue__:{...store,loading:!state.requestDelay && state.loadingTicks>0,jobList:rows(),defaultCity:{code:state.city},jobDetailLoading:false,jobDetail:{
             jobInfo:{encryptId:j.job_id,encryptUserId:j.boss_id,jobName:j.title,salaryDesc:j.salary,address:j.address,
               postDescription:j.description,invalidStatus:false},
-            bossInfo:{name:j.boss_name},brandComInfo:{brandName:j.company},relationInfo:{beFriend:false}}}};
+            bossInfo:{name:j.boss_name, activeTimeDesc:j.boss_active || ''},
+            brandComInfo:{brandName:j.company, scaleName:j.company_size || ''},relationInfo:{beFriend:false}}}};
         }
         if(selector==='a[href$="/web/geek/resume"]') return {};
         if(selector==='input[placeholder="搜索职位、公司"]') return {value:state.query};

@@ -48,7 +48,8 @@ class SimulatedBrowser:
     def card_state(self) -> dict:
         job = self._job()
         return {key: job.get(key, "") for key in (
-            "job_id", "company", "boss_id", "boss_name", "title", "salary", "address", "description"
+            "job_id", "company", "boss_id", "boss_name", "title", "salary", "address", "description",
+            "boss_active", "company_size",
         )} | {"can_add_friend": job.get("can_add_friend") is True}
 
     def chat_state(self) -> dict:

@@ -21,6 +21,8 @@
         boss_id: String(info.user_id),
         boss_name: [...(document.querySelector('.job-boss-info h2')?.childNodes || [])]
           .filter(n => n.nodeType === 3).map(n => n.textContent).join('').trim(),
+        boss_active: document.querySelector('.job-boss-info h2 .boss-active-time')?.innerText.trim() || '',
+        company_size: document.querySelector('.sider-company .icon-scale')?.closest('p')?.innerText.trim() || '',
         title: info.job_name,
         salary: info.job_salary || '',
         address: document.querySelector('.location-address')?.innerText.trim() || '',
@@ -43,6 +45,8 @@
       company: brand.brandName,
       boss_id: String(info.encryptUserId || ''),
       boss_name: boss.name,
+      boss_active: String(boss.activeTimeDesc || ''),
+      company_size: String(brand.scaleName || ''),
       title: info.jobName,
       salary: info.salaryDesc,
       address: info.address,

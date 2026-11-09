@@ -42,6 +42,13 @@ CREATE TABLE IF NOT EXISTS jobs (
   PRIMARY KEY (run_id, job_id)
 );
 CREATE INDEX IF NOT EXISTS jobs_account ON jobs(account_id, status);
+CREATE TABLE IF NOT EXISTS job_meta (
+  run_id TEXT NOT NULL REFERENCES runs(run_id) ON DELETE CASCADE,
+  job_id TEXT NOT NULL,
+  boss_active TEXT NOT NULL DEFAULT '',
+  company_size TEXT NOT NULL DEFAULT '',
+  PRIMARY KEY (run_id, job_id)
+);
 CREATE TABLE IF NOT EXISTS job_sources (
   account_id TEXT NOT NULL,
   day TEXT NOT NULL,
@@ -105,6 +112,13 @@ CREATE TABLE IF NOT EXISTS platform_history (
   PRIMARY KEY (account_id, mode, job_id, source)
 );
 """
+
+# 岗位行与侧表合并：活跃时间和公司规模只在侧表，旧任务没有该行时读作空字符串。
+_JOB_SELECT = (
+    "SELECT jobs.*, IFNULL(boss_active, '') AS boss_active,"
+    " IFNULL(company_size, '') AS company_size FROM jobs"
+    " LEFT JOIN job_meta USING (run_id, job_id)"
+)
 
 
 class StoreError(RuntimeError):
@@ -248,24 +262,25 @@ class Store:
                 status_detail,
             ),
         )
+        self.db.execute(
+            "INSERT OR REPLACE INTO job_meta (run_id, job_id, boss_active, company_size)"
+            " VALUES (?, ?, ?, ?)",
+            (run_id, job["job_id"], job.get("boss_active", ""), job.get("company_size", "")),
+        )
         self.db.commit()
 
     def job(self, run_id: str, job_id: str) -> dict | None:
         row = self.db.execute(
-            "SELECT * FROM jobs WHERE run_id = ? AND job_id = ?", (run_id, job_id)
+            f"{_JOB_SELECT} WHERE jobs.run_id = ? AND jobs.job_id = ?", (run_id, job_id)
         ).fetchone()
         return dict(row) if row else None
 
     def jobs(self, run_id: str, status: str | None = None) -> list[dict]:
-        if status is None:
-            rows = self.db.execute(
-                "SELECT * FROM jobs WHERE run_id = ? ORDER BY job_id", (run_id,)
-            ).fetchall()
-        else:
-            rows = self.db.execute(
-                "SELECT * FROM jobs WHERE run_id = ? AND status = ? ORDER BY job_id",
-                (run_id, status),
-            ).fetchall()
+        rows = self.db.execute(
+            f"{_JOB_SELECT} WHERE jobs.run_id = ? AND (? IS NULL OR jobs.status = ?)"
+            " ORDER BY jobs.job_id",
+            (run_id, status, status),
+        ).fetchall()
         return [dict(row) for row in rows]
 
     def set_job_status(
