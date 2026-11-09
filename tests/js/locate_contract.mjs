@@ -12,12 +12,12 @@ const TARGET = { job_id: "job-target", company: "示例目标科技", boss_id: "
 const ITEM_HEIGHT = 80;
 const WINDOW_HEIGHT = 800; // 只渲染 10 条，模拟虚拟滚动
 
-function sourceFor(index) {
+function sourceFor(index, targetBrand = TARGET.company) {
   if (index === "target") {
     return {
       encryptJobId: TARGET.job_id,
       encryptBossId: TARGET.boss_id,
-      brandName: TARGET.company,
+      brandName: targetBrand,
       uid: "uid-target",
       uniqueId: "conv-target",
     };
@@ -31,7 +31,7 @@ function sourceFor(index) {
   };
 }
 
-function pageFor({ items, scrollTop = 0, duplicated = false }) {
+function pageFor({ items, scrollTop = 0, duplicated = false, targetBrand }) {
   const list = {
     scrollTop,
     clientHeight: WINDOW_HEIGHT,
@@ -47,10 +47,10 @@ function pageFor({ items, scrollTop = 0, duplicated = false }) {
     const last = first + Math.ceil(WINDOW_HEIGHT / ITEM_HEIGHT);
     const rendered = [];
     for (let i = first; i < Math.min(last, items.length); i += 1) {
-      rendered.push(node(sourceFor(items[i]), clicks, i));
+      rendered.push(node(sourceFor(items[i], targetBrand), clicks, i));
     }
     if (duplicated && items.slice(first, last).includes("target")) {
-      rendered.push(node(sourceFor("target"), clicks, -1));
+      rendered.push(node(sourceFor("target", targetBrand), clicks, -1));
     }
     return rendered;
   };
@@ -143,7 +143,13 @@ await expectFailure(
   "Target contact not found"
 );
 
-// 5. 试运行不点击会话，只确认能定位。
+// 5. 猎头代招：会话里的公司名与岗位详情页不同，仍要按 job/boss 定位到目标会话。
+{
+  const { result, clicks } = await run({ items: ["other-1", "target"], targetBrand: "BOSS直聘猎头" });
+  if (result?.found !== true || clicks[0] !== 1) failures.push("headhunter: 公司名不同时未定位到目标会话");
+}
+
+// 6. 试运行不点击会话，只确认能定位。
 {
   const { result, clicks } = await run({ items: ["other-1", "target"] }, { dry_run: true });
   if (result?.found !== true || clicks.length !== 0) failures.push("dry-run: 试运行不应点击会话");
