@@ -301,7 +301,7 @@ python3 -m legwork --data-dir /tmp/legwork-data2 run --config /tmp/legwork.confi
 ## 开发与验证
 
 ```bash
-python3 -m unittest discover -s tests -v     # 144 项
+python3 -m unittest discover -s tests -v     # 151 项
 ruff check legwork tests                      # 通过
 node tests/js/guard_contract.mjs              # 点击守卫契约
 node tests/js/locate_contract.mjs             # 虚拟滚动定位契约
