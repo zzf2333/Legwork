@@ -19,6 +19,10 @@ JOB_FIELDS = (
     "description",
 )
 
+# 发送前比对用的字段：直接打开详情页读不到地址（.location-address 与 _jobInfo.address 都不存在），
+# 地址仍照常采集、参与程序条件，只是不进发送前的 JD 比对。
+SEND_SNAPSHOT_FIELDS = tuple(field for field in JOB_FIELDS if field != "address")
+
 # 稳定岗位 ID 只允许平台加密 ID 字符集；带 / ? # 等字符的值拼不出可信链接。
 JOB_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_-]{3,127}$")
 JOB_URL = "https://www.zhipin.com/job_detail/{job_id}.html"
@@ -29,18 +33,27 @@ def normalize_text(value) -> str:
     return " ".join(str(value or "").split())
 
 
-def snapshot_digest(job: dict) -> str:
-    """岗位快照摘要：绑定 JD 正文内容，发送前必须与页面一致。
-
-    job_url 与 source_keyword 是定位和来源信息，不参与正文摘要。
-    """
+def _digest(job: dict, fields: tuple[str, ...]) -> str:
     canonical = json.dumps(
-        {field: normalize_text(job.get(field, "")) for field in JOB_FIELDS},
+        {field: normalize_text(job.get(field, "")) for field in fields},
         ensure_ascii=False,
         sort_keys=True,
         separators=(",", ":"),
     )
     return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+
+
+def snapshot_digest(job: dict) -> str:
+    """岗位快照摘要：绑定 JD 正文内容，用于同日判定复用与占用比对。
+
+    job_url 与 source_keyword 是定位和来源信息，不参与正文摘要。
+    """
+    return _digest(job, JOB_FIELDS)
+
+
+def send_digest(job: dict) -> str:
+    """发送前比对用的摘要：只含直接详情页也能读到的字段，不含地址。"""
+    return _digest(job, SEND_SNAPSHOT_FIELDS)
 
 
 def job_url(job_id: str) -> str:

@@ -307,6 +307,17 @@ class SendTest(CliCase):
         detail = self.cli("today", "--config", str(self.config), "--day", "2026-03-02", "--job", "job-a1")
         self.assertIn("待重新准备", detail.stdout)
 
+    def test_address_unavailable_does_not_block_send(self):
+        run_id, _packet = self.prepare_packet_send()
+        jobs = json.loads((self.fixtures / "jobs.json").read_text(encoding="utf-8"))
+        for job in jobs:
+            if job["job_id"] == "job-a1":
+                job["address"] = ""
+        support.write_json(self.fixtures / "jobs.json", jobs)
+        proc = self.send(run_id, "--job", "job-a1")
+        self.assertEqual(proc.returncode, 0, proc.stderr)
+        self.assertEqual(json.loads(proc.stdout)["sent"], 1)
+
     def test_platform_history_blocks_send(self):
         run_id, _packet = self.prepare_packet_send()
         browser = support.browser_script()

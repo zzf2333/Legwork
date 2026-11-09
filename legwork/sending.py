@@ -5,7 +5,7 @@ import uuid
 
 from . import ego
 from .errors import PolicyError, SendFailure
-from .records import identity_keys, snapshot_digest
+from .records import identity_keys, send_digest, snapshot_digest
 from .store import DuplicateClaim
 
 # 出现这些结果说明平台状态已不可信，本轮必须停下，不能继续下一个岗位。
@@ -246,7 +246,7 @@ def _preflight(config, job, browser, *, first_contact: bool = True) -> dict:
         job["boss_id"],
     ):
         raise SendFailure("job_identity_changed", "详情页岗位身份与快照不一致")
-    if snapshot_digest(card) != job["snapshot_digest"]:
+    if send_digest(card) != send_digest(job):
         raise SendFailure("job_snapshot_changed", "岗位描述与快照不一致：重新准备候选后再发")
     if first_contact and card.get("can_add_friend") is not True:
         raise SendFailure("not_first_contact", "平台显示该岗位不是首次沟通入口")
