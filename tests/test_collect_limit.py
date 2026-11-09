@@ -132,6 +132,38 @@ class LoadMoreTests(unittest.TestCase):
             browser.open_job(support.JOBS[0] | {'source_keyword': 'first'})
         self.assertEqual(json.loads(self.state_file.read_text()).get('cardClicks', 0), 0)
 
+    def test_duplicate_card_without_data_is_rejected(self):
+        self.load_more_state()
+        other = dict(support.JOBS[0]) | {
+            'job_id': 'job-other', 'company': '示例其他科技', 'boss_id': 'boss-other'
+        }
+        self.state['jobs'] = support.JOBS[:5] + [other]
+        self.state['keywordBatches'] = {'first': [['job-a1', 'job-a2'], ['job-other', 'job-a3']]}
+        self.state['hrefOverrides'] = {'job-other': '/job_detail/job-a1.html'}
+        self.state['dataOverrides'] = {'job-a1': None, 'job-other': None}
+        self.save()
+        browser = self.browser_with_limit(3)
+        with self.assertRaises(BrowserError):
+            browser.open_job(support.JOBS[0] | {'source_keyword': 'first'})
+        self.assertEqual(json.loads(self.state_file.read_text()).get('cardClicks', 0), 0)
+
+    def test_duplicate_card_with_other_job_id_is_rejected(self):
+        self.load_more_state()
+        other = dict(support.JOBS[0]) | {
+            'job_id': 'job-other', 'company': '示例其他科技', 'boss_id': 'boss-other'
+        }
+        self.state['jobs'] = support.JOBS[:5] + [other]
+        self.state['keywordBatches'] = {'first': [['job-a1', 'job-a2'], ['job-other', 'job-a3']]}
+        self.state['hrefOverrides'] = {'job-other': '/job_detail/job-a1.html'}
+        self.state['dataOverrides'] = {
+            'job-a1': {'encryptJobId': 'job-other'}, 'job-other': {'encryptJobId': 'job-other'}
+        }
+        self.save()
+        browser = self.browser_with_limit(3)
+        with self.assertRaises(BrowserError):
+            browser.open_job(support.JOBS[0] | {'source_keyword': 'first'})
+        self.assertEqual(json.loads(self.state_file.read_text()).get('cardClicks', 0), 0)
+
     def test_platform_end_stops_without_anomaly(self):
         self.load_more_state(listExhausted=True)
         self.state['keywordBatches'] = {'first': [['job-a1', 'job-a2']]}
