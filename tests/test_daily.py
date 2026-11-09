@@ -251,7 +251,7 @@ class ListContentTest(DailyCase):
         table = self.today("--day", "2026-03-02")
         self.assertIn("今日投递清单 2026-03-02", table)
         self.assertIn("示例一号科技", table)
-        self.assertIn("已排除", table)
+        self.assertIn("采集排除", table)
         self.assertIn("缺少字段", table)
         self.assertIn("采集异常 1 条", table)
         self.assertNotIn("无稳定ID岗位", table, "无 ID 条目只进采集异常，不进清单")

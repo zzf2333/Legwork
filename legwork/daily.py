@@ -14,9 +14,9 @@ STATUS_LABELS = {
     "sent": "已发送",
     "uncertain": "结果待核对",
     "ready": "待发送",
-    "skipped": "已排除",
+    "skipped": "判断跳过",
     "awaiting_decisions": "待判断",
-    "excluded": "已排除",
+    "excluded": "采集排除",
     "stale": "待重新准备",
 }
 
@@ -197,12 +197,14 @@ def build(store, config, day: str) -> dict:
         )
     counts: dict[str, int] = {}
     for row in rows:
-        counts[row["status"]] = counts.get(row["status"], 0) + 1
+        status = str(row["status"])
+        label = STATUS_LABELS.get(status, status)
+        counts[label] = counts.get(label, 0) + 1
     return {
         "account_id": account_id,
         "day": day,
         "active_config_digest": active,
-        "counts": {STATUS_LABELS.get(key, key): value for key, value in counts.items()},
+        "counts": counts,
         "rows": rows,
         "anomalies": [
             {

@@ -74,7 +74,7 @@ class DailyReviewTests(daily_tests.DailyCase):
         self.decide(first['run_id'], packet)
         self.prepare([daily_tests.custom('job-a', title='实习开发', description='新要求')], name='second')
         detail = self.today('--day', '2026-03-02', '--job', 'job-a')
-        self.assertIn('状态：已排除', detail)
+        self.assertIn('状态：采集排除', detail)
         self.assertIn('新要求', detail)
         with Store(self.data / 'state.sqlite3') as store:
             old_job = store.job(first['run_id'], 'job-a')
