@@ -136,7 +136,7 @@ def parse(document: dict, path: str | Path = "<memory>") -> Config:
 
     daily_limit = _bounded_int(document, "daily_limit", 1, 100)
     batch_size = _bounded_int(document, "batch_size", 1, 20)
-    collect_per_keyword = _bounded_int(document, "collect_per_keyword", 0, 100, default=0)
+    collect_per_keyword = _bounded_int(document, "collect_per_keyword", 0, 100, default=40)
 
     browser = document.get("browser")
     if not isinstance(browser, dict):

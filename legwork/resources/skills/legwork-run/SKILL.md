@@ -26,7 +26,7 @@ legwork send    --config legwork.config.json --run-id <run_id>
 
 准备与发送是两个阶段：`decide` 只接收模型结论并保存正文；`send` 只消费已保存且仍有效的记录。只有本轮候选已处理完或预算耗尽才能完成准备；`decide` 会自动检查，也可用 `finalize` 核对条件。未完成任务会以 `prepare_incomplete` 拒绝；`failed` 必须通过 `run --resume-run` 显式续作，不能强行finalize。没有额度安排判断的岗位保留为待判断并写明原因。
 
-`prepare` 的真实通道会先滚动加载完整联系历史（最多30批，无进展即停止），再搜索和读取岗位；配置了 `collect_per_keyword` 时每个关键词还会滚动加载到该阈值（按整页读取，可能超过配置值）。这些步骤由脚本完成，不需要 agent 逐页操作。只查看岗位时运行到 `prepare` 或 `packet` 即停止，不调用 `send`/`run`。
+`prepare` 的真实通道会先滚动加载完整联系历史（最多30批，无进展即停止），再搜索和读取岗位；每个关键词默认还会滚动加载到 `collect_per_keyword`（缺省 40，设 0 只读首屏；按整页读取，可能超过配置值）。这些步骤由脚本完成，不需要 agent 逐页操作。只查看岗位时运行到 `prepare` 或 `packet` 即停止，不调用 `send`/`run`。
 
 1. `prepare` 输出 `run_id`、入选数量和被拒原因（`program_requirement`、`platform_history`、`duplicate_in_batch`、`prior_run`、`missing_detail`、`not_first_contact`、`inactive_recruiter` 等），以及采集异常数量（无稳定 ID 的条目）。被拒岗位不要人工绕过。
 2. `packet` 写出批次文件（`{"packet_id": null, "jobs": []}` 表示本轮没有预算内待处理候选，此时不要调用模型）。取批顺序固定：先本账号首次采集日期最新的岗位（平台不给发布时间，这是新岗位的代理信号），再中小公司、中大型、大型、未知规模；同规模内先最近活跃（`一周内`）的岗位，最后按岗位 ID 稳定排序。额度不够时，没进本批的岗位保留为待判断，不要自己改成选中哪几个。

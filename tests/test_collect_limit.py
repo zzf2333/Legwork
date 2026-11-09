@@ -15,9 +15,9 @@ from legwork.ego import BrowserError, EgoBrowser
 
 
 class CollectPerKeywordConfigTests(unittest.TestCase):
-    def test_missing_field_keeps_single_screen(self):
+    def test_missing_field_uses_default(self):
         config = config_module.parse(dict(support.BASE_CONFIG))
-        self.assertEqual(config.collect_per_keyword, 0)
+        self.assertEqual(config.collect_per_keyword, 40)
 
     def test_explicit_limit_is_parsed(self):
         config = config_module.parse(dict(support.BASE_CONFIG) | {"collect_per_keyword": 40})

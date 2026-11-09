@@ -169,7 +169,7 @@ python3 -m legwork --data-dir /tmp/legwork-data2 run --config /tmp/legwork.confi
 | `dedupe_scope` | `job` / `boss` / `company` 的组合，跨任务与批内去重口径 |
 | `daily_limit` | 每日首次沟通额度，按已占用计数并跨运行累计 |
 | `batch_size` | 每批岗位数，1..20 |
-| `collect_per_keyword` | 每个关键词停止继续加载的阈值，0..100；缺省 `0` 只读首屏，大于 0 时滚动加载更多；按整页读取，实际条数可能超过该值 |
+| `collect_per_keyword` | 每个关键词停止继续加载的阈值，0..100；缺省 `40`，设 `0` 只读首屏；按整页读取，实际条数可能超过该值 |
 | `browser` | `{"space","job_page","chat_page"}`，Ego 空间名或编号加两个页面标签 |
 | `timezone` | 判定「今天」和旧任务的时区 |
 | `live` | 是否允许操作真实平台；`false` 时只允许 `--fixtures` |
