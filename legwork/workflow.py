@@ -11,14 +11,7 @@ from pathlib import Path
 
 from . import daily, ego
 from .errors import PolicyError
-from .records import (
-    OBSERVED_FIELDS,
-    activity_bucket,
-    identity_keys,
-    job_url,
-    preference_key,
-    snapshot_digest,
-)
+from .records import JOB_FIELDS, identity_keys, job_url, snapshot_digest
 
 REQUIRED_JOB_FIELDS = ("job_id", "company", "boss_id", "title", "address", "description")
 
@@ -44,7 +37,7 @@ def prepare(store, config, source, now) -> dict:
         anomalies += 1
     groups = {}
     for raw in snapshot["jobs"]:
-        job: dict = {field: str(raw.get(field, "") or "") for field in OBSERVED_FIELDS}
+        job: dict = {field: str(raw.get(field, "") or "") for field in JOB_FIELDS}
         job.update(source_keyword=str(raw.get("source_keyword") or ""),
                    can_add_friend=raw.get("can_add_friend") is not False,
                    observation_error=raw.get("observation_error") or "")
@@ -66,7 +59,7 @@ def prepare(store, config, source, now) -> dict:
             all(pair[1][field] for field in REQUIRED_JOB_FIELDS),
             bool(pair[1]["description"]),
             sum(bool(pair[1][field]) for field in REQUIRED_JOB_FIELDS),
-            sum(bool(pair[1][field]) for field in OBSERVED_FIELDS), pair[0]))
+            sum(bool(pair[1][field]) for field in JOB_FIELDS), pair[0]))
         for field in ("company", "boss_id"):
             if len({item[field] for item in observations if item[field]}) > 1:
                 job = job | {"observation_error": "identity_conflict"}
@@ -152,7 +145,7 @@ def build_packet(store, config, run, data_dir, now, limit: int | None = None) ->
     if open_packet is not None:
         jobs = [store.job(run_id, job_id) for job_id in open_packet["job_ids"]]
     else:
-        jobs = sorted(awaiting, key=preference_key)[:cap]
+        jobs = awaiting[:cap]
         if not jobs:
             return {
                 "packet_id": None,
@@ -261,9 +254,6 @@ def _screen_detail(config, job) -> tuple[str, str] | None:
             return ("program_requirement", requirement.id)
         if requirement.op == "excludes" and requirement.value in text:
             return ("program_requirement", requirement.id)
-    # 活跃信息缺失不算久未活跃：读不到不等于没上线。
-    if config.activity_required and activity_bucket(job.get("boss_active")) == "一周外":
-        return ("inactive_recruiter", f"招聘方活跃：{job['boss_active']}")
     if job.get("can_add_friend") is False:
         return ("not_first_contact", "平台显示不是首次沟通入口")
     return None
@@ -306,8 +296,6 @@ def packet_document(config, run, jobs) -> dict:
                 "salary": job["salary"],
                 "address": job["address"],
                 "description": job["description"],
-                "boss_active": job.get("boss_active") or "",
-                "company_size": job.get("company_size") or "",
                 "snapshot_digest": job["snapshot_digest"],
             }
             for job in jobs

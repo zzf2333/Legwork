@@ -27,18 +27,7 @@ description: 与用户一起把 BOSS 投递需求整理成 legwork 的配置文�
 
 - 程序条件：`{"id": "hr_city", "kind": "program", "field": "address", "op": "contains", "value": "示例城市", "text": "工作地点在示例城市"}`。`field` 支持 `title`、`description`、`address`；`op` 支持 `contains`、`excludes`。
 - 语义条件：`{"id": "hr_shift", "kind": "semantic", "text": "不需要长期夜班", "unknown_policy": "skip"}`。匹配时由 agent 逐项给出 `met`/`unmet`/`unknown` 与证据。
-- 活跃条件：`{"id": "hr_active", "kind": "activity", "text": "招聘方最近一周内活跃"}`，只写 `id` 和 `text`。用户说「只投最近还在招人的」「不要半年前活跃的」，就加这一条：招聘方活跃时间是 `2周内活跃`、`本月活跃`、`3月内活跃`、`半年前活跃`、`近半年活跃` 的岗位在准备期直接排除（`inactive_recruiter`），不占额度、不叫模型。`在线` / `刚刚活跃` / `今日活跃` / `3日内活跃` / `本周活跃` 保留；平台没给活跃文本时也保留，不要在 `preferences` 里另写一套文本规则。
-- 也不要把可以语义判断的条件写成关键词包含，那会把不确定的 JD 伪装成确定结论。
-
-## 偏好怎么写
-
-`preferences` 是自由文本，原样交给 agent 用于写理由和话术。用户希望「优先中小公司」「优先最近活跃的」，写在这里：
-
-```json
-"preferences": {"notes": "优先 100-499 人的中小团队；同规模里优先最近活跃的招聘方。"}
-```
-
-取批顺序已经固定为「中小 → 中大型 → 大型 → 未知规模」，同规模内「一周内 → 未知 → 一周外」，不需要也没法用 `preferences` 改。`preferences` 只影响 agent 的判断理由和话术，不影响额度与排除。
+- 不要把可以语义判断的条件写成关键词包含，那会把不确定的 JD 伪装成确定结论。
 
 ## 宿主输出形状
 

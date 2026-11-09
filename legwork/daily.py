@@ -27,7 +27,6 @@ REASON_LABELS = {
     "platform_history": "平台已有联系记录",
     "prior_run": "已进入既往任务或已占用",
     "not_first_contact": "平台显示不是首次沟通入口",
-    "inactive_recruiter": "招聘方活跃时间超过一周",
     "budget_exhausted": "本轮额度不足，未安排判断",
     "awaiting_preparation": "待后续准备",
     "snapshot_changed": "JD 已变化，需重新准备",

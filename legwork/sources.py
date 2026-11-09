@@ -9,7 +9,17 @@ import json
 from pathlib import Path
 
 from .errors import PolicyError
-from .records import OBSERVED_FIELDS
+
+JOB_FIELDS = (
+    "job_id",
+    "company",
+    "boss_id",
+    "boss_name",
+    "title",
+    "salary",
+    "address",
+    "description",
+)
 
 
 class FixtureSource:
@@ -43,7 +53,7 @@ class FixtureSource:
             )
         return {
             "jobs": [
-                {field: str(item.get(field, "") or "") for field in OBSERVED_FIELDS}
+                {field: str(item.get(field, "") or "") for field in JOB_FIELDS}
                 | {
                     "can_add_friend": item.get("can_add_friend") is not False,
                     "source_keyword": str(item.get("source_keyword") or ""),
@@ -104,7 +114,7 @@ class EgoSource:
                 card = self.browser.card_state()
                 if any(card.get(key) != row.get(key) for key in ("job_id", "company", "boss_id")):
                     raise PolicyError("identity_mismatch", f"详情页身份与列表不一致：{job_id}")
-                observed = {field: str(card.get(field, "") or "") for field in OBSERVED_FIELDS} | {
+                observed = {field: str(card.get(field, "") or "") for field in JOB_FIELDS} | {
                     "can_add_friend": card.get("can_add_friend") is True,
                     "source_keyword": keyword,
                 }

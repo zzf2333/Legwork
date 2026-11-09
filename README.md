@@ -173,7 +173,7 @@ python3 -m legwork --data-dir /tmp/legwork-data2 run --config /tmp/legwork.confi
 | `timezone` | 判定「今天」和旧任务的时区 |
 | `live` | 是否允许操作真实平台；`false` 时只允许 `--fixtures` |
 
-硬条件分三类。程序条件只看 `title` / `description` / `address` 的包含或排除，处理能确定的字段：
+硬条件分两类。程序条件只看 `title` / `description` / `address` 的包含或排除，处理能确定的字段：
 
 ```json
 {"id": "hr_city", "kind": "program", "field": "address", "op": "contains", "value": "示例城市", "text": "工作地点在示例城市"}
@@ -186,14 +186,6 @@ python3 -m legwork --data-dir /tmp/legwork-data2 run --config /tmp/legwork.confi
 ```
 
 `unmet`，或 `skip` 策略下的 `unknown`，都不会被放行发送。
-
-第三类是只看采集结果的活跃条件，只写 `id` 和 `text`：
-
-```json
-{"id": "hr_active", "kind": "activity", "text": "招聘方最近一周内活跃"}
-```
-
-加上这一条后，招聘方活跃时间落在「一周外」（`2周内活跃`、`本月活跃`、`3月内活跃`、`半年前活跃`、`近半年活跃`）的岗位在准备期直接排除，原因 `inactive_recruiter`，不占额度、不调用模型，也不交给 agent 判断。活跃文本读不到时**不排除**：读不到不等于久未活跃。`activity` 条件不支持 `field`/`op`/`value`，写了会被配置校验拒绝，避免被误当成关键词匹配。
 
 ## 安全与边界
 
@@ -228,9 +220,7 @@ python3 -m legwork --data-dir /tmp/legwork-data2 run --config /tmp/legwork.confi
 `<data-dir>/state.sqlite3` 保留运行、岗位快照、同日来源、采集异常、批次、决策、发送占用与平台联系历史。一个数据目录对应一个账号，换账号就换目录。
 
 - 状态 `awaiting_decisions` / `ready` / `sending` / `uncertain` / `sent` / `skipped` / `excluded` / `stale` 由岗位状态投影得出，不重复存可推导状态。
-- 快照字段是 `job_id` / `company` / `boss_id` / `boss_name` / `title` / `salary` / `address` / `description` 八项。招聘方活跃时间（`boss_active`，如 `刚刚活跃`）和公司规模（`company_size`，如 `100-499人`）也照常采集，但每天在变，所以不进快照摘要、不影响同日复用与发送前比对，存在 `job_meta` 侧表；这两项只用于准备期排除、取批排序和模型的判断输入。
-- 取批顺序：先按公司规模 `中小` → `中大型` → `大型` → 未知，同规模内按招聘方 `一周内` → 未知 → `一周外`，最后按岗位 ID。同一天同一批候选的顺序因此稳定，额度不够时先取中小公司、最近活跃的岗位。
-- 状态库 schema 目前是 `5`；旧版本数据目录在写表前直接拒绝，不自动迁移也不清空。`job_meta` 侧表用 `CREATE TABLE IF NOT EXISTS` 补建，不改 schema 版本，旧数据目录打开后仍可用（缺行读作空字符串）。
+- 状态库 schema 目前是 `5`；旧版本数据目录在写表前直接拒绝，不自动迁移也不清空。
 - 同日同配置、同一份 JD 已接收的结果会复用，不重复调用模型；JD 或配置变化的未发送结果标为 `stale`，原正文仍可查。
 - 同日同配置且 JD 未变的 `skip` 会复用；跨日可能重新判断，要长期排除请改条件或关键词。
 - `browser.lock` 只防本机两个进程同时操作浏览器，不是平台分布式锁。
@@ -299,7 +289,7 @@ python3 -m legwork --data-dir /tmp/legwork-data2 run --config /tmp/legwork.confi
 ## 开发与验证
 
 ```bash
-python3 -m unittest discover -s tests -v     # 124 项
+python3 -m unittest discover -s tests -v     # 105 项
 ruff check legwork tests                      # 通过
 node tests/js/guard_contract.mjs              # 点击守卫契约
 node tests/js/locate_contract.mjs             # 虚拟滚动定位契约

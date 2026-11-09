@@ -64,11 +64,6 @@ class Config:
         return tuple(item for item in self.requirements if item.kind == "program")
 
     @property
-    def activity_required(self) -> bool:
-        """配置声明了「招聘方一周内活跃」这类硬条件：准备期直接排除久未活跃的岗位。"""
-        return any(item.kind == "activity" for item in self.requirements)
-
-    @property
     def resume_fact_ids(self) -> set[str]:
         return {item["id"] for item in self.resume_facts}
 
@@ -291,17 +286,9 @@ def _requirements(document: dict) -> list[Requirement]:
                     unknown_policy=policy,
                 )
             )
-        elif kind == "activity":
-            # 活跃时间由程序按采集文本判断，不接受 field/op/value，避免被误读成文本匹配。
-            for key in ("field", "op", "value"):
-                if key in raw:
-                    raise ConfigError(
-                        f"hard_requirements.{requirement_id}.{key} 不能用于 activity 条件"
-                    )
-            items.append(Requirement(id=requirement_id, kind="activity", text=text.strip()))
         else:
             raise ConfigError(
-                f"hard_requirements.{requirement_id}.kind 只支持 program、semantic 或 activity"
+                f"hard_requirements.{requirement_id}.kind 只支持 program 或 semantic"
             )
     if not any(item.kind == "semantic" for item in items):
         raise ConfigError("hard_requirements 至少需要一个交给 agent 判断的 semantic 条件")

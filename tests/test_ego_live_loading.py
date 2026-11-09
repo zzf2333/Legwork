@@ -66,18 +66,6 @@ class LoadingTests(unittest.TestCase):
         with self.assertRaises(BrowserError):
             self.browser.search('second', 'wrong-city')
 
-    def test_card_reads_recruiter_activity_and_company_size(self):
-        observed = dict(self.state['jobs'][0], boss_active='刚刚活跃', company_size='100-499人')
-        self.state['jobs'] = [observed, self.state['jobs'][1]]
-        self.save()
-        card = self.browser.card_state()
-        self.assertEqual((card['boss_active'], card['company_size']), ('刚刚活跃', '100-499人'))
-        self.assertEqual(card['boss_name'], observed['boss_name'])
-
-    def test_card_without_activity_and_size_returns_empty(self):
-        card = self.browser.card_state()
-        self.assertEqual((card['boss_active'], card['company_size']), ('', ''))
-
     def test_history_loads_until_explicit_end(self):
         self.state['historyBatches'] = [[{'encryptJobId': 'prior-1'}], [{'encryptJobId': 'prior-2'}]]
         self.save()
