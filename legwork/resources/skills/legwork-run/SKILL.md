@@ -29,8 +29,8 @@ legwork send    --config legwork.config.json --run-id <run_id>
 `prepare` 的真实通道会先滚动加载完整联系历史（最多30批，无进展即停止），再搜索和读取岗位；配置了 `collect_per_keyword` 时每个关键词还会滚动加载到该条数上限。这些步骤由脚本完成，不需要 agent 逐页操作。只查看岗位时运行到 `prepare` 或 `packet` 即停止，不调用 `send`/`run`。
 
 1. `prepare` 输出 `run_id`、入选数量和被拒原因（`program_requirement`、`platform_history`、`duplicate_in_batch`、`prior_run`、`missing_detail`、`not_first_contact`、`inactive_recruiter` 等），以及采集异常数量（无稳定 ID 的条目）。被拒岗位不要人工绕过。
-2. `packet` 写出批次文件（`{"packet_id": null, "jobs": []}` 表示本轮没有预算内待处理候选，此时不要调用模型）。取批顺序固定：先中小公司，再中大型、大型、未知规模；同规模内先最近活跃（`一周内`）的岗位，最后按岗位 ID 稳定排序。额度不够时，没进本批的岗位保留为待判断，不要自己改成选中哪几个。
-3. 把批次文件交给宿主 agent：逐岗判断 `hard_requirements` 中每个语义条件，输出符合 `resources/schema/model_result.schema.json` 的 JSON。批次里每岗带 `boss_active`（如 `刚刚活跃`）与 `company_size`（如 `100-499人`），可直接写进理由和招呼；平台没给时是空字符串，不要补编。
+2. `packet` 写出批次文件（`{"packet_id": null, "jobs": []}` 表示本轮没有预算内待处理候选，此时不要调用模型）。取批顺序固定：先本账号首次采集日期最新的岗位（平台不给发布时间，这是新岗位的代理信号），再中小公司、中大型、大型、未知规模；同规模内先最近活跃（`一周内`）的岗位，最后按岗位 ID 稳定排序。额度不够时，没进本批的岗位保留为待判断，不要自己改成选中哪几个。
+3. 把批次文件交给宿主 agent：逐岗判断 `hard_requirements` 中每个语义条件，输出符合 `resources/schema/model_result.schema.json` 的 JSON。批次里每岗带 `boss_active`（如 `刚刚活跃`）、`company_size`（如 `100-499人`）与 `first_collected_day`（如 `2026-03-03`，本账号首次采集到该岗位的日期），可直接写进理由和招呼；平台没给或本工具还没有记录时是空字符串，不要补编。
 4. `legwork decide --config ... --run-id ... --packet <批次文件> --results <结果文件>`。整批一次校验：缺少岗位、多出岗位、条件缺失、`unmet` 或 `skip` 策略下的 `unknown`、引用不存在的简历事实都会被拒绝，且一次拒绝不落盘任何岗位。
 5. `legwork finalize` 核对准备已完成或预算已耗尽，不能跳过剩余判断；`today --job <job_id>` 可逐岗核对完整 JD、话术与状态。之后 `legwork send --config ... --run-id ...`。只有 `live=true` 才实发；发送前会核对账号、岗位身份、JD 摘要与平台历史，点击后核对目标会话、默认消息、草稿与送达回执（消息 MID + 会话 ID）。中断或结果不明会保留 `uncertain`，再次执行不会重发同一岗位。
 6. 遇到结果不明、账号不符、历史不完整、岗位或 JD 变化、对方已回复：本轮立即停止，剩余岗位保持 `ready`。先人工核对平台现状，再决定是否续作。

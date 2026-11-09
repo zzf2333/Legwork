@@ -4,6 +4,7 @@ from __future__ import annotations
 import hashlib
 import json
 import re
+from datetime import date
 from pathlib import Path
 
 from .errors import PolicyError
@@ -93,9 +94,21 @@ def company_size_bucket(text) -> str:
     return "大型"
 
 
+def first_collected_order(day) -> int:
+    """首次采集日期倒序：越新越靠前；没有记录返回 0，排在有记录的岗位之后。"""
+    try:
+        return -date.fromisoformat(str(day or "")).toordinal()
+    except ValueError:
+        return 0
+
+
 def preference_key(job: dict) -> tuple:
-    """取批顺序：先中小公司，同规模内先最近活跃，最后按岗位 ID 保持同日顺序稳定。"""
+    """取批顺序：先新采集的岗位，再中小公司，同规模内先最近活跃，最后按岗位 ID。
+
+    `first_collected_day` 是本地记录的最早采集日，作为平台发布时间缺失时的代理信号。
+    """
     return (
+        first_collected_order(job.get("first_collected_day")),
         SIZE_ORDER.get(company_size_bucket(job.get("company_size")), 3),
         ACTIVITY_ORDER.get(activity_bucket(job.get("boss_active")), 1),
         str(job.get("job_id", "")),

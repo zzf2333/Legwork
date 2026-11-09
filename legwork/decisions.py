@@ -30,6 +30,7 @@ def accept_decisions(store, config, run, packet_path, results_path, now) -> dict
     jobs = [store.job(run_id, job_id) for job_id in expected]
     if any(job is None for job in jobs):
         raise PolicyError("packet_unknown", "批次里的岗位已不在状态库中：重新导出批次")
+    jobs = workflow.with_first_collected_day(store, run["account_id"], jobs)
     rebuild = workflow.packet_document(config, run, jobs)
     if stored["input_digest"] != rebuild["input_digest"]:
         raise PolicyError("packet_input_mismatch", "状态库中的批次输入与当前快照或配置不一致")

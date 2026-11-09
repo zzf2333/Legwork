@@ -137,6 +137,16 @@ def _reused_decision(job_id: str, row: dict) -> dict:
     }
 
 
+def with_first_collected_day(store, account_id: str, jobs: list[dict]) -> list[dict]:
+    """给岗位附上本账号首次采集日期，供取批排序和模型输入使用。
+
+    平台不提供发布时间，这个日期只是本地事实：不进快照摘要，也不影响同日复用与发送前比对。
+    没有采集记录的岗位留空字符串，排序退回原有规则。
+    """
+    days = store.first_collected_days(account_id)
+    return [job | {"first_collected_day": days.get(job["job_id"], "")} for job in jobs]
+
+
 def build_packet(store, config, run, data_dir, now, limit: int | None = None) -> dict:
     """导出一批待判断岗位；limit 是本轮剩余准备预算，批次不得超出。"""
     validate_preparation(store, config, run, now)
@@ -144,13 +154,16 @@ def build_packet(store, config, run, data_dir, now, limit: int | None = None) ->
     cap = min(config.batch_size, remaining_budget(store, config, run))
     if limit is not None:
         cap = min(cap, max(0, limit))
-    awaiting = store.jobs(run_id, "awaiting_decisions")
+    awaiting = with_first_collected_day(
+        store, run["account_id"], store.jobs(run_id, "awaiting_decisions")
+    )
     open_packet = _open_packet(store, run_id)
     if open_packet is not None and len(open_packet["job_ids"]) > cap:
         store.replace_packet(open_packet["packet_id"])
         open_packet = None
     if open_packet is not None:
-        jobs = [store.job(run_id, job_id) for job_id in open_packet["job_ids"]]
+        by_id = {job["job_id"]: job for job in awaiting}
+        jobs = [by_id[job_id] for job_id in open_packet["job_ids"]]
     else:
         jobs = sorted(awaiting, key=preference_key)[:cap]
         if not jobs:
@@ -308,6 +321,7 @@ def packet_document(config, run, jobs) -> dict:
                 "description": job["description"],
                 "boss_active": job.get("boss_active") or "",
                 "company_size": job.get("company_size") or "",
+                "first_collected_day": job.get("first_collected_day") or "",
                 "snapshot_digest": job["snapshot_digest"],
             }
             for job in jobs
