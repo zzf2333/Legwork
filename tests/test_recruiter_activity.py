@@ -120,7 +120,13 @@ class ActivityConfigTest(unittest.TestCase):
         self.assertNotIn("hr_active", model_ids)
 
     def test_activity_requirement_refuses_text_matching_fields(self):
-        for fields in ({"field": "title"}, {"op": "contains"}, {"value": "最近一周"}):
+        for fields in (
+            {"field": "title"},
+            {"op": "contains"},
+            {"value": "最近一周"},
+            {"unknown_policy": "skip"},
+            {"priority": 1},
+        ):
             with self.subTest(fields=fields), self.assertRaises(config_module.ConfigError):
                 config_module.parse(self.document(**fields))
 

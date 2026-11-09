@@ -230,7 +230,7 @@ python3 -m legwork --data-dir /tmp/legwork-data2 run --config /tmp/legwork.confi
 - 状态 `awaiting_decisions` / `ready` / `sending` / `uncertain` / `sent` / `skipped` / `excluded` / `stale` 由岗位状态投影得出，不重复存可推导状态。
 - 快照字段是 `job_id` / `company` / `boss_id` / `boss_name` / `title` / `salary` / `address` / `description` 八项。招聘方活跃时间（`boss_active`，如 `刚刚活跃`）与公司规模（`company_size`，如 `100-499人`）也照常采集，但每天在变，所以不进快照摘要、不影响同日复用与发送前 JD 比对，存在 `job_meta` 侧表；这两项只用于准备期排除、取批排序和模型的判断输入。
 - 取批顺序：先按公司规模 `中小` → `中大型` → `大型` → 未知，同规模内按招聘方 `一周内` → 未知 → `一周外`，最后按岗位 ID。同一天同一批候选的顺序因此稳定，额度不够时先取中小公司、最近活跃的岗位。
-- 状态库 schema 目前是 `5`；旧版本数据目录在写表前直接拒绝，不自动迁移也不清空。`job_meta` 侧表用 `CREATE TABLE IF NOT EXISTS` 补建，不改 schema 版本，旧数据目录打开后仍可用（缺行读作空字符串）。
+- 状态库 schema 目前是 `5`；旧版本数据目录在写表前直接拒绝，不自动迁移也不清空。`job_meta` 侧表用 `CREATE TABLE IF NOT EXISTS` 补建，不改 schema 版本，旧数据目录打开后仍可用（缺行读作空字符串）。升级到带 `job_meta` 的版本后，升级前导出的未消费批次会因为 `packet_document` 新增 `boss_active`/`company_size` 而改变 `input_digest`，`decide` 时报 `packet_input_mismatch`；重新 `packet` 导出新批次即可，不要手工改旧文件。
 - 同日同配置、同一份 JD 已接收的结果会复用，不重复调用模型；JD 或配置变化的未发送结果标为 `stale`，原正文仍可查。
 - 同日同配置且 JD 未变的 `skip` 会复用；跨日可能重新判断，要长期排除请改条件或关键词。
 - `browser.lock` 只防本机两个进程同时操作浏览器，不是平台分布式锁。

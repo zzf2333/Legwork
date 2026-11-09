@@ -292,12 +292,12 @@ def _requirements(document: dict) -> list[Requirement]:
                 )
             )
         elif kind == "activity":
-            # 活跃时间由程序按采集文本判断；不接受 field/op/value，避免被误读成关键词匹配。
-            for key in ("field", "op", "value"):
-                if key in raw:
-                    raise ConfigError(
-                        f"hard_requirements.{requirement_id}.{key} 不能用于 activity 条件"
-                    )
+            # 活跃时间由程序按采集文本判断；只接受 id/kind/text，其他键一律拒绝。
+            extra = sorted(set(raw) - {"id", "kind", "text"})
+            if extra:
+                raise ConfigError(
+                    f"hard_requirements.{requirement_id}.{extra[0]} 不能用于 activity 条件"
+                )
             items.append(Requirement(id=requirement_id, kind="activity", text=text.strip()))
         else:
             raise ConfigError(
