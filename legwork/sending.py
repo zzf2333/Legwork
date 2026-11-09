@@ -307,11 +307,7 @@ def _deliver(config, job, browser, opened, greeting: str, *, existing: bool = Fa
 def _target_identity(job, selected) -> dict:
     if not selected:
         raise SendFailure("conversation_mismatch", "点击后没有选中目标会话")
-    if (selected.get("job_id"), selected.get("company"), selected.get("boss_id")) != (
-        job["job_id"],
-        job["company"],
-        job["boss_id"],
-    ):
+    if (selected.get("job_id"), selected.get("boss_id")) != (job["job_id"], job["boss_id"]):
         raise SendFailure("conversation_mismatch", "选中会话与目标岗位身份不一致")
     if not selected.get("uid") or not selected.get("conversation_id"):
         raise SendFailure("conversation_mismatch", "目标会话缺少 uid 或会话 ID")
@@ -329,8 +325,8 @@ def _require_same_target(chat, identity: dict) -> None:
     if (
         str(selected.get("uid") or "") != identity["uid"]
         or str(selected.get("conversation_id") or "") != identity["conversation_id"]
-        or (selected.get("job_id"), selected.get("company"), selected.get("boss_id"))
-        != (identity["job_id"], identity["company"], identity["boss_id"])
+        or (selected.get("job_id"), selected.get("boss_id"))
+        != (identity["job_id"], identity["boss_id"])
     ):
         raise SendFailure("conversation_changed", "目标会话在填写或发送过程中被切换")
 

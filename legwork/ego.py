@@ -262,7 +262,7 @@ class EgoBrowser:
     await chat.waitForFunction(({ self, identity, reader }) => {
       const read = new Function('return (' + reader + ')')();
       const state = read({self, kind:'chat'});
-      return state.contacts.some(c => c.job_id === identity.job_id && c.boss_id === identity.boss_id && c.company === identity.company);
+      return state.contacts.some(c => c.job_id === identity.job_id && c.boss_id === identity.boss_id);
     }, {self:a.self, identity:a.identity, reader:a.reader}, {timeout:20000});
     const located = await chat.evaluate(locateContact, {
       identity: a.identity, max_steps: a.locate_steps,
@@ -271,7 +271,7 @@ class EgoBrowser:
     await chat.waitForFunction(({ self, identity, reader }) => {
       const read = new Function('return (' + reader + ')')();
       const state = read({self, kind:'chat'}), c=state.selected;
-      return c?.job_id===identity.job_id && c?.boss_id===identity.boss_id && c?.company===identity.company &&
+      return c?.job_id===identity.job_id && c?.boss_id===identity.boss_id &&
         state.messages_loaded && state.editor_present && String(state.editor_id)===String(c.conversation_id) &&
         state.messages.some(m => m.mid && m.conversation_id===c.conversation_id &&
           m.sender===String(self) && m.recipient===String(c.uid) && m.delivered);
@@ -302,7 +302,7 @@ class EgoBrowser:
     await chat.waitForFunction(({ self, identity, reader }) => {
       const read = new Function('return (' + reader + ')')();
       const state = read({self, kind:'chat'}), c=state.selected;
-      return c?.job_id===identity.job_id && c?.boss_id===identity.boss_id && c?.company===identity.company &&
+      return c?.job_id===identity.job_id && c?.boss_id===identity.boss_id &&
         state.messages_loaded && state.editor_present && String(state.editor_id)===String(c.conversation_id);
     }, {self:a.self, identity:a.identity, reader:a.reader}, {timeout:20000});
     return { located_step: located.step };""",

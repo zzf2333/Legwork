@@ -5,7 +5,6 @@
   const sameTarget = (selected, identity) =>
     !!selected &&
     selected.job_id === identity.job_id &&
-    selected.company === identity.company &&
     selected.boss_id === identity.boss_id &&
     String(selected.uid) === String(identity.uid) &&
     (!identity.conversation_id ||
