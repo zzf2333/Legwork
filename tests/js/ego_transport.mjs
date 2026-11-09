@@ -57,9 +57,10 @@ function pageDOM(kind) {
   };
   const contactScrollHeight = () => Math.max(state.contacts.length * chatList.itemHeight, chatList.clientHeight);
   function jobNode(j) {
-    const link={getAttribute:()=>'/job_detail/'+j.job_id+'.html',click(){state.opened=j.job_id;}};
+    const href=state.hrefOverrides?.[j.job_id] || '/job_detail/'+j.job_id+'.html';
+    const link={getAttribute:()=>href,click(){state.opened=j.job_id;}};
     return {parentElement:{__vue__:{$props:{data:source(j)}}},getClientRects:()=>[1],
-      querySelector:()=>link,click(){state.opened=j.job_id;},link};
+      querySelector:()=>link,click(){state.opened=j.job_id;state.cardClicks=(state.cardClicks||0)+1;},link};
   }
   const document = {body:{get innerText(){return kind==='job' && state.listExhausted ? '没有更多了' : '';}},activeElement:null,
     documentElement:{get scrollHeight(){return 800 + batchIds(state.query).length * 120;}},

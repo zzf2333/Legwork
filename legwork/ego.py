@@ -163,12 +163,16 @@ class EgoBrowser:
       );
       if (links.length === 0) return { found: false };
       if (links.length > 1) {
-        // 多页加载后同一岗位可能留下多张卡片；身份一致才归并，冲突仍按找不到处理。
+        // 多页加载后同一岗位可能留下多张卡片；身份完整且一致才归并，冲突或缺字段仍拒绝。
         const identities = new Set(links.map((node) => {
           const data = node.parentElement?.__vue__?.$props?.data;
-          return [data?.brandName, data?.encryptBossId].join('|');
+          const jobId = data?.encryptJobId;
+          const company = data?.brandName;
+          const bossId = data?.encryptBossId;
+          if (!jobId || !company || !bossId || jobId !== id) return null;
+          return [jobId, company, bossId].join('|');
         }));
-        if (identities.size !== 1) return { found: false };
+        if (identities.has(null) || identities.size !== 1) return { found: false };
       }
       links[0].click();
       return { found: true };

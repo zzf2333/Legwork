@@ -3,13 +3,15 @@ import json
 import unittest
 from datetime import datetime
 from pathlib import Path
+from unittest.mock import patch
 
 import support
 import test_ego_live_loading as loading
 
+import legwork.ego as ego_module
 from legwork import config as config_module
 from legwork import sources
-from legwork.ego import EgoBrowser
+from legwork.ego import BrowserError, EgoBrowser
 
 
 class CollectPerKeywordConfigTests(unittest.TestCase):
@@ -91,25 +93,44 @@ class LoadMoreTests(unittest.TestCase):
         self.assertNotIn('load_error', result)
         self.assertEqual(self.events(), ['list-scroll'])
 
-    def test_scroll_budget_extends_browser_timeout(self):
+    def test_search_uses_extended_subprocess_timeout(self):
+        self.load_more_state()
         browser = self.browser_with_limit(40)
         captured = {}
+        current = ego_module.subprocess.run
 
-        def fake_run(action, *, body, timeout=None, **arguments):
-            captured['timeout'] = timeout
-            return {'list': {'rows': []}}
+        def spy(*args, **kwargs):
+            captured['timeout'] = kwargs.get('timeout')
+            return current(*args, **kwargs)
 
-        browser._run = fake_run
-        browser.search('first', self.city, 40)
+        with patch('legwork.ego.subprocess.run', side_effect=spy):
+            browser.search('first', self.city, 40)
         self.assertEqual(captured['timeout'], browser.timeout + 40 * 11)
 
     def test_duplicate_card_across_pages_opens_once(self):
         self.load_more_state()
         self.state['keywordBatches'] = {'first': [['job-a1', 'job-a2'], ['job-a1', 'job-a3']]}
+        self.state['opened'] = 'job-a2'
         self.save()
         browser = self.browser_with_limit(3)
         browser.open_job(support.JOBS[0] | {'source_keyword': 'first'})
-        self.assertEqual(json.loads(self.state_file.read_text())['opened'], 'job-a1')
+        state = json.loads(self.state_file.read_text())
+        self.assertEqual(state['opened'], 'job-a1')
+        self.assertEqual(state['cardClicks'], 1)
+
+    def test_duplicate_card_with_conflicting_identity_is_rejected(self):
+        self.load_more_state()
+        other = dict(support.JOBS[0]) | {
+            'job_id': 'job-other', 'company': '示例其他科技', 'boss_id': 'boss-other'
+        }
+        self.state['jobs'] = support.JOBS[:5] + [other]
+        self.state['keywordBatches'] = {'first': [['job-a1', 'job-a2'], ['job-other', 'job-a3']]}
+        self.state['hrefOverrides'] = {'job-other': '/job_detail/job-a1.html'}
+        self.save()
+        browser = self.browser_with_limit(3)
+        with self.assertRaises(BrowserError):
+            browser.open_job(support.JOBS[0] | {'source_keyword': 'first'})
+        self.assertEqual(json.loads(self.state_file.read_text()).get('cardClicks', 0), 0)
 
     def test_platform_end_stops_without_anomaly(self):
         self.load_more_state(listExhausted=True)
